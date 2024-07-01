@@ -16,7 +16,7 @@ exports.handler = async function(event, context) {
           {
             role: 'user',
             content: [
-              { type: 'text', text: 'What\'s in this image?' },
+              { type: 'text', text: '이미지의 내용을 한글로 알려줘.' },
               { type: 'image_url', image_url: { url: image } }
             ]
           }
