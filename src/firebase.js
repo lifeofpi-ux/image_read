@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDnpwvLzEtRVpCdJhwlYXQKVQVnbnGyG1M",
-  authDomain: "imagefeedex.firebaseapp.com",
-  projectId: "imagefeedex",
-  storageBucket: "imagefeedex.appspot.com",
-  messagingSenderId: "492553849418",
-  appId: "1:492553849418:web:f09f34f226cfaa7b315cfd"
+  apiKey: process.env.API_KEY,
+  authDomain: process.env.AUTH_DOMAIN,
+  projectId: process.env.PROJECT_IDx,
+  storageBucket: process.env.STORAGE_BUCKET,
+  messagingSenderId: process.env.MESSAGING_SENDER_ID,
+  appId: process.env.APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);
