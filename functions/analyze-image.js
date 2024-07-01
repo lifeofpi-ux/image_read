@@ -21,7 +21,7 @@ exports.handler = async function(event, context) {
             ]
           }
         ],
-        max_tokens: 300
+        max_tokens: 1000
       },
       {
         headers: {
