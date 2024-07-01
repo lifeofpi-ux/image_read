@@ -14,11 +14,16 @@
         "npm:@testing-library/jest-dom@^5.17.0",
         "npm:@testing-library/react@^13.4.0",
         "npm:@testing-library/user-event@^13.5.0",
+        "npm:autoprefixer@^10.4.19",
         "npm:axios@^1.4.0",
+        "npm:dotenv@^16.4.5",
+        "npm:firebase@^10.12.2",
         "npm:glob@^10.4.2",
+        "npm:postcss@^8.4.39",
         "npm:react-dom@^18.3.1",
         "npm:react-scripts@5.0.1",
         "npm:react@^18.3.1",
+        "npm:tailwindcss@^3.4.4",
         "npm:web-vitals@^2.1.4"
       ]
     }

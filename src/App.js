@@ -104,15 +104,18 @@ function App() {
 
   const saveResult = async (analysisResult) => {
     try {
+      console.log('Attempting to save result:', analysisResult);
       const docRef = await addDoc(collection(db, "analysisResults"), {
-        imageUrl: image,
         result: analysisResult,
         createdAt: serverTimestamp()
       });
+      console.log('Document written with ID:', docRef.id);
       setSaveStatus('결과가 성공적으로 저장되었습니다. ID: ' + docRef.id);
     } catch (error) {
       console.error('저장 오류:', error);
-      setSaveStatus('결과 저장 중 오류가 발생했습니다.');
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      setSaveStatus(`결과 저장 중 오류가 발생했습니다: ${error.message}`);
     }
   };
 
@@ -230,10 +233,3 @@ function App() {
 }
 
 export default App;
-
-console.log(process.env.API_KEY);
-console.log(process.env.AUTH_DOMAIN);
-console.log(process.env.PROJECT_ID);
-console.log(process.env.STORAGE_BUCKET);
-console.log(process.env.MESSAGING_SENDER_ID);
-console.log(process.env.APP_ID);
