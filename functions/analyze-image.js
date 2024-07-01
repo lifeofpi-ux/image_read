@@ -31,9 +31,12 @@ exports.handler = async function(event, context) {
       }
     );
 
+    const result = response.data.choices[0].message.content;
+    const tokens = response.data.usage.total_tokens;
+
     return {
       statusCode: 200,
-      body: JSON.stringify({ result: response.data.choices[0].message.content })
+      body: JSON.stringify({ result, tokens })
     };
   } catch (error) {
     console.error('Error:', error.response ? error.response.data : error.message);

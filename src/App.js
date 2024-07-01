@@ -40,6 +40,7 @@ const Modal = ({ isOpen, onClose, content }) => {
 function App() {
   const [image, setImage] = useState(null);
   const [result, setResult] = useState('');
+  const [tokensUsed, setTokensUsed] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
@@ -78,6 +79,7 @@ function App() {
 
     setIsLoading(true);
     setResult('');
+    setTokensUsed(0);
     setSaveStatus('');
 
     try {
@@ -89,6 +91,7 @@ function App() {
       const data = await response.json();
       if (response.ok) {
         setResult(data.result);
+        setTokensUsed(data.tokens);
         await saveResult(data.result);
         await fetchRecentAnalyses();  // 분석 후 히스토리 업데이트
       } else {
@@ -180,15 +183,15 @@ function App() {
               <div className="mb-8">
                 <label className="m-auto w-[300px] flex flex-col items-center px-4 py-6 bg-gray-50 text-gray-600 rounded-lg border border-gray-300 cursor-pointer hover:bg-gray-100 hover:text-gray-700 transition duration-300 ease-in-out">
                   <svg className="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
+                    <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.c .74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
                   </svg>
                   <span className="mt-2 text-base leading-normal">이미지 선택</span>
                   <input type='file' className="hidden" onChange={handleImageUpload} accept="image/*" />
                 </label>
               </div>
               {image && (
-                <div className="mt-4 mb-8">
-                  <img src={image} alt="업로드된 이미지" className="max-w-full h-auto rounded-lg border border-gray-300" />
+                <div className="m-auto mt-4 mb-8">
+                  <img src={image} alt="업로드된 이미지" className="m-auto max-w-full h-auto rounded-lg border border-gray-300" />
                 </div>
               )}
               <div className="flex items-center justify-center">
@@ -204,6 +207,7 @@ function App() {
                 <div className="mt-8">
                   <h2 className="text-xl font-bold mb-2 text-gray-800">분석 결과:</h2>
                   <p className="whitespace-break-spaces text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-300">{result}</p>
+                  <p className="text-sm text-gray-600 mt-2">사용된 토큰량: {tokensUsed}</p>
                   {saveStatus && <p className="mt-2 text-sm text-gray-600">{saveStatus}</p>}
                 </div>
               )}
