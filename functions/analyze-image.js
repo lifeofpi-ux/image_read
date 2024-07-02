@@ -34,6 +34,9 @@ exports.handler = async function(event, context) {
     const result = response.data.choices[0].message.content;
     const tokens = response.data.usage.total_tokens;
 
+    console.log('Result:', result);
+    console.log('Tokens Used:', tokens);
+
     return {
       statusCode: 200,
       body: JSON.stringify({ result, tokens })

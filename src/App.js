@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from './firebase';
+import Cropper from 'react-cropper';
+import 'cropperjs/dist/cropper.css';
 
 const API_URL = '/.netlify/functions/analyze-image';
 
-// 히스토리 아이템 컴포넌트
 const HistoryItem = ({ item, onClick }) => (
   <button
     onClick={() => onClick(item)}
@@ -14,7 +15,6 @@ const HistoryItem = ({ item, onClick }) => (
   </button>
 );
 
-// 모달 컴포넌트
 const Modal = ({ isOpen, onClose, content }) => {
   if (!isOpen) return null;
 
@@ -47,6 +47,7 @@ function App() {
   const [history, setHistory] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState(null);
+  const cropperRef = useRef(null);
 
   useEffect(() => {
     fetchRecentAnalyses();
@@ -72,8 +73,8 @@ function App() {
   };
 
   const analyzeImage = async () => {
-    if (!image) {
-      alert('먼저 이미지를 업로드해주세요.');
+    if (!cropperRef.current) {
+      alert('먼저 이미지를 업로드하고 영역을 선택해주세요.');
       return;
     }
 
@@ -82,10 +83,13 @@ function App() {
     setTokensUsed(0);
     setSaveStatus('');
 
+    const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas();
+    const croppedImage = croppedCanvas.toDataURL('image/png');
+
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
-        body: JSON.stringify({ image })
+        body: JSON.stringify({ image: croppedImage })
       });
 
       const data = await response.json();
@@ -93,7 +97,7 @@ function App() {
         setResult(data.result);
         setTokensUsed(data.tokens);
         await saveResult(data.result);
-        await fetchRecentAnalyses();  // 분석 후 히스토리 업데이트
+        await fetchRecentAnalyses();
       } else {
         throw new Error(data.error || '오류가 발생했습니다');
       }
@@ -107,17 +111,12 @@ function App() {
 
   const saveResult = async (analysisResult) => {
     try {
-      console.log('Attempting to save result:', analysisResult);
       const docRef = await addDoc(collection(db, "analysisResults"), {
         result: analysisResult,
         createdAt: serverTimestamp()
       });
-      console.log('Document written with ID:', docRef.id);
       setSaveStatus('결과가 성공적으로 저장되었습니다. ID: ' + docRef.id);
     } catch (error) {
-      console.error('저장 오류:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
       setSaveStatus(`결과 저장 중 오류가 발생했습니다: ${error.message}`);
     }
   };
@@ -133,7 +132,6 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-800 flex flex-col font-pretendard">
-      {/* GNB */}
       <nav className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-2">
           <div className="relative flex items-center justify-between h-12">
@@ -156,7 +154,6 @@ function App() {
         </div>
       </nav>
 
-      {/* Side Menu */}
       <div className={`fixed inset-0 z-50 ${isSideMenuOpen ? '' : 'pointer-events-none'}`}>
         <div 
           className={`fixed inset-0 bg-black ${isSideMenuOpen ? 'opacity-25' : 'opacity-0 pointer-events-none'} transition-opacity duration-300 ease-in-out`}
@@ -174,7 +171,6 @@ function App() {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-grow py-6 flex flex-col justify-center sm:py-12">
         <div className="relative py-3 sm:max-w-xl sm:mx-auto">
           <div className="relative px-4 py-10 bg-white shadow-lg sm:rounded-3xl sm:p-20">
@@ -191,10 +187,20 @@ function App() {
               </div>
               {image && (
                 <div className="m-auto mt-4 mb-8">
-                  <img src={image} alt="업로드된 이미지" className="m-auto max-w-full h-auto rounded-lg border border-gray-300" />
+                  <Cropper
+                    src={image}
+                    style={{ height: 400, width: "100%" }}
+                    // Cropper.js options
+                    initialAspectRatio={0}
+                    aspectRatio={0}
+                    guides={true}
+                    scalable={true}
+                    zoomable={true}
+                    ref={cropperRef}
+                  />
                 </div>
               )}
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center mt-4">
                 <button
                   onClick={analyzeImage}
                   disabled={!image || isLoading}
@@ -211,8 +217,6 @@ function App() {
                   {saveStatus && <p className="mt-2 text-sm text-gray-600">{saveStatus}</p>}
                 </div>
               )}
-              
-              {/* History Section */}
               <div className="mt-8">
                 <h3 className="text-lg font-semibold mb-2">최근 분석 결과:</h3>
                 <div className="flex flex-wrap flex-col">
@@ -225,8 +229,6 @@ function App() {
           </div>
         </div>
       </div>
-
-      {/* Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
