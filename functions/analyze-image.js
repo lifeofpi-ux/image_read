@@ -6,7 +6,7 @@ exports.handler = async function(event, context) {
   }
 
   try {
-    const { image } = JSON.parse(event.body);
+    const { image, prompt } = JSON.parse(event.body);
 
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -16,7 +16,7 @@ exports.handler = async function(event, context) {
           {
             role: 'user',
             content: [
-              { type: 'text', text: '이미지의 내용을 한글로 알려줘.' },
+              { type: 'text', text: prompt },
               { type: 'image_url', image_url: { url: image } }
             ]
           }

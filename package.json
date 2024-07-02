@@ -11,6 +11,7 @@
     "dotenv": "^16.4.5",
     "firebase": "^10.12.2",
     "glob": "^10.4.2",
+    "lucide-react": "^0.400.0",
     "react": "^18.3.1",
     "react-cropper": "^2.3.3",
     "react-dom": "^18.3.1",

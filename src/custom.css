@@ -1,0 +1,13 @@
+/* custom.css */
+.cropper-drag-box {
+    border-radius: 10px;
+}
+
+.cropper-bg {
+    border-radius: 10px;
+}
+
+.focus-border:focus {
+    border: 3px solid #4A90E2;  /* 포커스 시 적용할 테두리 스타일 */
+    outline: none;
+  }
