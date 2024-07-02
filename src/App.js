@@ -346,45 +346,53 @@ function App() {
                       </div>
                     </div>
                   )}
-                  <div className="mb-8">
+                    <div className="mb-8 relative">
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="prompt">
                       👉 사용자 프롬프트
                     </label>
-                    <textarea
-                      id="prompt"
-                      rows="3"
-                      className="w-full text-gray-700 leading-tight"
-                      style={{
-                        background: 'rgb(237 237 237)',
-                        padding: '15px',
-                        borderRadius: '16px',
-                        resize: 'none',
-                        border: isFocused ? '3px solid #4A90E2' : '3px solid transparent',
-                        transition: 'border-color 0.3s ease',
-                        outline: 'none'
-                      }}
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
-                      onFocus={() => setIsFocused(true)}
-                      onBlur={() => setIsFocused(false)}
-                      placeholder="이미지에 대해 알고 싶은 내용을 입력하세요."
-                    ></textarea>
-                  </div>
-                  <div className="flex items-center justify-center mt-4 space-x-4">
-                    <button
-                      onClick={saveCustomPrompt}
-                      disabled={!prompt}
-                      className={`px-4 py-2 font-bold text-white bg-green-500 rounded-full hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${!prompt ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      프롬프트 저장
-                    </button>
-                    <button
-                      onClick={analyzeImage}
-                      disabled={!image || !prompt || isLoading}
-                      className={`px-4 py-2 font-bold text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${(!image || !prompt || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    >
-                      {isLoading ? '분석 중...' : '이미지 분석'}
-                    </button>
+                    <div className="relative">
+                      <textarea
+                        id="prompt"
+                        rows="3"
+                        className="w-full text-gray-700 leading-tight"
+                        style={{
+                          background: 'rgb(237 237 237)',
+                          padding: '15px',
+                          borderRadius: '16px',
+                          resize: 'none',
+                          border: isFocused ? '3px solid #4A90E2' : '3px solid transparent',
+                          transition: 'border-color 0.3s ease',
+                          outline: 'none'
+                        }}
+                        value={prompt}
+                        onChange={(e) => setPrompt(e.target.value)}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        placeholder="이미지에 대해 알고 싶은 내용을 입력하세요."
+                      ></textarea>
+                      <button
+                        onClick={saveCustomPrompt}
+                        disabled={!prompt}
+                        className={`absolute left-3 bottom-4 w-8 h-8 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${
+                          !prompt ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={analyzeImage}
+                        disabled={!prompt || isLoading}
+                        className={`absolute right-3 bottom-4 w-8 h-8 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${
+                          (!prompt || isLoading) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   {result && (
                     <div className="mt-8">
