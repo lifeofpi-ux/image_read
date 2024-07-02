@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import './App.css';
@@ -154,21 +154,7 @@ function RubricReportAI() {
   const [isRubricModalOpen, setIsRubricModalOpen] = useState(false);
   const [selectedRubric, setSelectedRubric] = useState(null);
 
-  useEffect(() => {
-    fetchRecentAnalyses();
-    fetchRubrics();
-  }, []);
-
-  const fetchRecentAnalyses = async () => {
-    const analysesRef = collection(db, "analysisResults");
-    const q = query(analysesRef, orderBy("createdAt", "desc"), limit(3));
-    const querySnapshot = await getDocs(q);
-    const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setAnalysisHistory(recentAnalyses);
-  };
-
-
-  const fetchRubrics = async () => {
+  const fetchRubrics = useCallback(async () => {
     const rubricsRef = collection(db, "Rubric");
     const q = query(rubricsRef, orderBy("createdAt", "desc"));
     const querySnapshot = await getDocs(q);
@@ -177,6 +163,19 @@ function RubricReportAI() {
     if (rubricList.length > 0 && !currentRubric) {
       setCurrentRubric(rubricList[0]);
     }
+  }, [currentRubric]);
+
+  useEffect(() => {
+    fetchRecentAnalyses();
+    fetchRubrics();
+  }, [fetchRubrics]);
+
+  const fetchRecentAnalyses = async () => {
+    const analysesRef = collection(db, "analysisResults");
+    const q = query(analysesRef, orderBy("createdAt", "desc"), limit(3));
+    const querySnapshot = await getDocs(q);
+    const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setAnalysisHistory(recentAnalyses);
   };
 
   const analyzeReport = async () => {
@@ -261,7 +260,7 @@ function RubricReportAI() {
       }
     }
   };
-  
+
   const saveResult = async (analysisResult, userPrompt) => {
     try {
       const docRef = await addDoc(collection(db, "analysisResults"), {
@@ -294,7 +293,7 @@ function RubricReportAI() {
             <div className="w-[760px] px-4">
               <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ 루브릭 기반 산출물 평가 도구</h1>
               <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4 Omni</div>
-              
+
               {/* 평가 루브릭 */}
               <div className="mb-8 relative">
                 <label className="block text-gray-700 text-base font-bold mb-2" htmlFor="rubric">
@@ -360,7 +359,7 @@ function RubricReportAI() {
               )}
 
               <div className="w-full flex mt-8">
-               
+
                 {/* 최근 분석 결과 */}
                 <div className="w-full mt-8">
                 <h3 className="text-base font-semibold mb-4">📰 최근 분석 결과</h3>
