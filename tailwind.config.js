@@ -9,6 +9,9 @@ module.exports = {
       whitespace: {
         'break-spaces': 'break-spaces',
       },
+      maxHeight: {
+        '800px': '800px',
+      },
     },
   },
   variants: {
