@@ -21,11 +21,11 @@ const Modal = ({ isOpen, onClose, content }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg max-h-800px overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">분석 결과</h2>
-        <p className="mb-4 font-semibold">프롬프트: {content.prompt}</p>
+        <h2 className="text-xl font-bold mb-4">📝 분석 결과</h2>
+        <p className="mb-4 font-semibold whitespace-break-spaces">👉 학생 산출물: {content.prompt}</p>
         <p className="mb-4 whitespace-break-spaces">{content.result}</p>
         <p className="text-sm text-gray-500 mb-4">
-          생성 시간: {new Date(content.createdAt?.toDate()).toLocaleString()}
+        ⏱️평가 시간: {new Date(content.createdAt?.toDate()).toLocaleString()}
         </p>
         <div className="w-full">
           <button
@@ -69,18 +69,18 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
 
   const fieldOrder = ['summary', 'acnum', 'rubric', 'high', 'mid', 'low'];
   const fieldLabels = {
-    summary: '평가 주제',
-    acnum: '성취기준',
-    rubric: '평가 프롬프트',
-    high: '우수',
-    mid: '보통',
-    low: '노력요함'
+    summary: '🪴 평가 주제',
+    acnum: '🧩 성취기준',
+    rubric: '📝 평가 프롬프트',
+    high: '😀 우수',
+    mid: '😊 보통',
+    low: '😀 노력요함'
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg max-w-2xl w-full shadow-lg">
-        <h2 className="text-xl font-bold mb-4">루브릭 내용</h2>
+        <h2 className="text-xl font-bold mb-4">📝 루브릭 내용</h2>
         <form onSubmit={handleSubmit}>
           {fieldOrder.map((key) => (
             <div key={key} className="mb-4">
@@ -93,7 +93,7 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
                 value={rubric[key]}
                 onChange={handleChange}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                rows="3"
+                rows="2"
               />
             </div>
           ))}
@@ -117,22 +117,93 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
               </button>
             </div>
             <div>
+             <button
+                type="button"
+                onClick={() => onApply(rubric)}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300 mr-2"
+              >
+                프롬프트 적용
+              </button>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 mr-2"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
               >
                 저장
               </button>
-              <button
-                type="button"
-                onClick={() => onApply(rubric)}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300"
-              >
-                적용
-              </button>
+             
             </div>
           </div>
         </form>
+      </div>
+    </div>
+  );
+};
+
+const MiniPopup = ({ isVisible, onClose }) => {
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className="absolute px-2 top-10 right-40 mt-2 mr-2 bg-black text-white text-sm rounded p-2 z-10 shadow-lg"
+      style={{ 
+        position: 'absolute', 
+        top: '10px', 
+        right: '50px',
+        animation: 'blink 2s linear infinite'
+      }}
+    >
+      <style jsx>{`
+        @keyframes blink {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+      `}</style>
+      <span>❤️ 평가 프롬프트 설정</span>
+      <button onClick={onClose} className="ml-2 text-gray-400 hover:text-gray-200 ">
+        &times;
+      </button>
+    </div>
+  );
+};
+
+const RubricDetailModal = ({ isOpen, onClose, rubric }) => {
+  if (!isOpen || !rubric) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-2xl w-full shadow-lg max-h-[80vh] overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4">🏷️ 루브릭 상세 정보</h2>
+        <div className="mb-4">
+          <h3 className="font-semibold">🪴 평가 주제</h3>
+          <p>{rubric.summary}</p>
+        </div>
+        <div className="mb-4">
+          <h3 className="font-semibold">🧩 성취기준</h3>
+          <p>{rubric.acnum}</p>
+        </div>
+        <div className="mb-4">
+          <h3 className="font-semibold">📝 평가 프롬프트</h3>
+          <p>{rubric.rubric}</p>
+        </div>
+        <div className="mb-4">
+          <h3 className="font-semibold">😀우수</h3>
+          <p>{rubric.high}</p>
+        </div>
+        <div className="mb-4">
+          <h3 className="font-semibold">😊보통</h3>
+          <p>{rubric.mid}</p>
+        </div>
+        <div className="mb-4">
+          <h3 className="font-semibold">😀노력요함</h3>
+          <p>{rubric.low}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
+        >
+          닫기
+        </button>
       </div>
     </div>
   );
@@ -153,6 +224,8 @@ function RubricReportAI() {
   const [currentRubric, setCurrentRubric] = useState(null);
   const [isRubricModalOpen, setIsRubricModalOpen] = useState(false);
   const [selectedRubric, setSelectedRubric] = useState(null);
+  const [isPopupVisible, setIsPopupVisible] = useState(true);
+  const [isRubricDetailModalOpen, setIsRubricDetailModalOpen] = useState(false);
 
   const fetchRubrics = useCallback(async () => {
     const rubricsRef = collection(db, "Rubric");
@@ -171,7 +244,7 @@ function RubricReportAI() {
   }, [fetchRubrics]);
 
   const fetchRecentAnalyses = async () => {
-    const analysesRef = collection(db, "analysisResults");
+    const analysesRef = collection(db, "RanalysisResults");
     const q = query(analysesRef, orderBy("createdAt", "desc"), limit(3));
     const querySnapshot = await getDocs(q);
     const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -263,7 +336,7 @@ function RubricReportAI() {
 
   const saveResult = async (analysisResult, userPrompt) => {
     try {
-      const docRef = await addDoc(collection(db, "analysisResults"), {
+      const docRef = await addDoc(collection(db, "RanalysisResults"), {
         result: analysisResult,
         prompt: userPrompt,
         createdAt: serverTimestamp()
@@ -285,6 +358,10 @@ function RubricReportAI() {
     setIsRubricModalOpen(false);
   };
 
+  const handleRubricDetailClick = () => {
+    setIsRubricDetailModalOpen(true);
+  };
+
   return (
     <div className="flex-grow py-6 flex justify-center sm:py-12">
       <div className="relative py-3 sm:max-w-7xl sm:mx-auto">
@@ -299,19 +376,36 @@ function RubricReportAI() {
                 <label className="block text-gray-700 text-base font-bold mb-2" htmlFor="rubric">
                   📊 평가 주제 
                 </label>
-                <textarea
-                  id="rubric"
-                  rows="3"
-                  className="w-full text-gray-700 leading-tight bg-gray-100 p-4 rounded-lg"
-                  value={currentRubric ? currentRubric.summary : ''}
-                  readOnly
-                />
+                <div className="relative">
+                  <textarea
+                    id="rubric"
+                    rows="3"
+                    className="w-full text-gray-700 leading-tight bg-gray-100 p-4 rounded-lg pr-10"
+                    value={currentRubric ? currentRubric.summary : ''}
+                    readOnly
+                    style={{
+                      background: 'rgb(239 239 255)',
+                      padding: '15px',
+                      borderRadius: '16px',
+                      resize: 'none',
+                      outline: 'none'
+                    }}                      
+                  />
+                  <button
+                    onClick={handleRubricDetailClick}
+                    className="absolute right-3 top-2/3 transform -translate-y-1/2 text-blue-500 hover:text-blue-600 transition duration-300"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* 사용자 프롬프트 */}
               <div className="mb-8 relative">
                 <label className="block text-gray-700 text-base font-bold mb-2" htmlFor="prompt">
-                  👉 사용자 프롬프트 (학생 산출물 포함)
+                  👉 학생 산출물 
                 </label>
                 <div className="relative">
                   <textarea
@@ -350,8 +444,7 @@ function RubricReportAI() {
               {/* 분석 결과 */}
               {result && (
                 <div className="mt-8">
-                  <h2 className="text-xl font-bold mb-2 text-gray-800">분석 결과 </h2>
-                  <p className="font-semibold mb-2">입력된 프롬프트: {prompt.substring(0, 50)}...</p>
+                  <h2 className="text-xl font-bold mb-2 text-gray-800">📝 분석 결과 </h2>
                   <p className="whitespace-break-spaces text-gray-700 bg-gray-50 p-4 rounded-lg border border-gray-300">{result}</p>
                   <p className="text-sm text-gray-600 mt-2">🎫 사용된 토큰량: {tokensUsed}</p>
                   {saveStatus && <p className="mt-2 text-sm text-gray-600">{saveStatus}</p>}
@@ -359,7 +452,6 @@ function RubricReportAI() {
               )}
 
               <div className="w-full flex mt-8">
-
                 {/* 최근 분석 결과 */}
                 <div className="w-full mt-8">
                 <h3 className="text-base font-semibold mb-4">📰 최근 분석 결과</h3>
@@ -419,15 +511,19 @@ function RubricReportAI() {
                     : 'from-blue-500 to-purple-500'
                 } text-white rounded-lg px-4 py-3 hover:from-blue-600 hover:to-purple-600 transition duration-300 text-left overflow-hidden shadow-md`}
               >
-                <p className="text-xs text-gray-200 truncate mb-1">{rubric.summary}</p>
-                <p className="font-semibold">{rubric.rubric}</p>
+                <p className="text-base text-base text-white-900 truncate mb-1">{rubric.summary}</p>
+                <p className="text-xs text-gray-200">{rubric.rubric}</p>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Right side tab toggle button */}
+      {/* Right side tab toggle button and MiniPopup */}
+      <MiniPopup 
+        isVisible={isPopupVisible}
+        onClose={() => setIsPopupVisible(false)}
+      />
       <button
         onClick={() => setIsRightSideTabOpen(!isRightSideTabOpen)}
         className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
@@ -454,6 +550,12 @@ function RubricReportAI() {
         onDelete={selectedRubric ? handleDeleteRubric : null}
         onApply={handleApplyRubric}
         initialRubric={selectedRubric}
+      />
+
+      <RubricDetailModal
+        isOpen={isRubricDetailModalOpen}
+        onClose={() => setIsRubricDetailModalOpen(false)}
+        rubric={currentRubric}
       />
     </div>
   );
