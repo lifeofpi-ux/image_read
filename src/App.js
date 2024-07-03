@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import ImageAnalysis from './ImageAnalysis';
 import RubricReportAI from './RubricReportAI'; 
 
@@ -148,8 +148,9 @@ function App() {
         <div className={`flex-grow transition-margin duration-300 ease-in-out ${isLeftSideTabOpen ? 'ml-80' : 'ml-0'}`}>
           <Routes>
             <Route path="/image-analysis" element={<ImageAnalysis />} />
-            <Route path="/rubric-report" element={<RubricReportAI />} />  
+            <Route path="/rubric-report" element={<RubricReportAI />} />
             <Route path="/" element={<HomePage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
 
