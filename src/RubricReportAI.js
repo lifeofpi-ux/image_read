@@ -22,7 +22,7 @@ const Modal = ({ isOpen, onClose, content }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg max-w-lg w-full shadow-lg max-h-800px overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">📝 분석 결과</h2>
-        <p className="mb-4 font-semibold whitespace-break-spaces">👉 학생 산출물: {content.prompt}</p>
+        <p className="mb-4 font-light whitespace-break-spaces">👉 학생 산출물 {content.prompt}</p>
         <p className="mb-4 whitespace-break-spaces">{content.result}</p>
         <p className="text-sm text-gray-500 mb-4">
         ⏱️평가 시간: {new Date(content.createdAt?.toDate()).toLocaleString()}
@@ -172,31 +172,31 @@ const RubricDetailModal = ({ isOpen, onClose, rubric }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-2xl w-full shadow-lg max-h-[80vh] overflow-y-auto">
+      <div className="bg-white p-6 rounded-lg max-w-xl w-full shadow-lg max-h-[80vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">🏷️ 루브릭 상세 정보</h2>
         <div className="mb-4">
-          <h3 className="font-semibold">🪴 평가 주제</h3>
-          <p>{rubric.summary}</p>
+          <h3 className="mb-2 font-semibold">🪴 평가 주제</h3>
+          <p className="ml-6" >{rubric.summary}</p>
         </div>
         <div className="mb-4">
-          <h3 className="font-semibold">🧩 성취기준</h3>
-          <p>{rubric.acnum}</p>
+          <h3 className="mb-2 font-semibold">🧩 성취기준</h3>
+          <p className="ml-6">{rubric.acnum}</p>
         </div>
         <div className="mb-4">
-          <h3 className="font-semibold">📝 평가 프롬프트</h3>
-          <p>{rubric.rubric}</p>
+          <h3 className="mb-2 font-semibold">📝 평가 프롬프트</h3>
+          <p className="ml-6">{rubric.rubric}</p>
         </div>
         <div className="mb-4">
-          <h3 className="font-semibold">😀우수</h3>
-          <p>{rubric.high}</p>
+          <h3 className="mb-2 font-semibold">😀우수</h3>
+          <p className="ml-6">{rubric.high}</p>
         </div>
         <div className="mb-4">
-          <h3 className="font-semibold">😊보통</h3>
-          <p>{rubric.mid}</p>
+          <h3 className="mb-2 font-semibold">😊보통</h3>
+          <p className="ml-6">{rubric.mid}</p>
         </div>
         <div className="mb-4">
-          <h3 className="font-semibold">😀노력요함</h3>
-          <p>{rubric.low}</p>
+          <h3 className="mb-2 font-semibold">😀노력요함</h3>
+          <p className="ml-6">{rubric.low}</p>
         </div>
         <button
           onClick={onClose}
