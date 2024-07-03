@@ -98,7 +98,7 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
         <form onSubmit={handleSubmit}>
           {fieldOrder.map((key) => (
             <div key={key} className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor={key}>
+              <label className="block text-gray-700 text-base font-bold mb-2" htmlFor={key}>
                 {fieldLabels[key]}
               </label>
               <textarea
