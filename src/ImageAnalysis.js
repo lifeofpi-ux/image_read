@@ -286,7 +286,11 @@ function ImageAnalysis() {
       await fetchRecentPrompts();
     } catch (error) {
       console.error('오류:', error);
-      setResult(`오류: ${error.message}`);
+      if (error.message.includes('TimeoutError') || error.message.includes('Task timed out')) {
+        setResult("보다 작은 사이즈의 이미지를 사용해주시거나, 다시 시도해보세요.");
+      } else {
+        setResult(`오류: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -414,7 +418,6 @@ function ImageAnalysis() {
                   />
                  
                   <div className="absolute bottom-4 right-4 flex space-x-2">
-                    
                     <button
                       onClick={() => handleZoom(true)}
                       className="bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition duration-300"
@@ -459,20 +462,6 @@ function ImageAnalysis() {
                     placeholder="이미지에 대해 알고 싶은 내용을 입력하세요."
                   ></textarea>
               
-                  {/* <button
-                    onClick={saveCustomPrompt}
-                    disabled={!prompt}
-                    className={`absolute left-3 bottom-4 w-8 h-8 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${
-                      !prompt ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-500 hover:bg-green-600'
-                    }`}
-                  >
-                 
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                    </svg>
-                  </button>
-                   */}
-
                   <button
                     onClick={analyzeImage}
                     disabled={!prompt || isLoading}
@@ -480,9 +469,16 @@ function ImageAnalysis() {
                       (!prompt || isLoading) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
                     }`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                    </svg>
+                    {isLoading ? (
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
@@ -525,9 +521,6 @@ function ImageAnalysis() {
         </div>
       </div>
       
-      
-
-
       {/* Right side tab */}
       <div 
         className={`fixed right-0 bg-white shadow-lg transform ${isRightSideTabOpen ? 'translate-x-0' : 'translate-x-full'} transition duration-300 ease-in-out z-50 side-tab`} 
@@ -573,7 +566,6 @@ function ImageAnalysis() {
               </button>
             ))}
           </div>
-          
         </div>
       </div>
 
