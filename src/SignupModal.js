@@ -171,7 +171,7 @@ function SignupModal({ onClose, onLoginClick }) {
                 id="nickname"
                 value={nickname}
                 onChange={(e) => { setNickname(e.target.value.replace(/\s/g, '')); setIsNicknameChecked(false); }}
-                className="bg-gray-50 flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border-gray-500 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                className="0 bbg-gray-50 flex-1 min-w-lock w-full px-3 py-2 rounded-none rounded-l-md border-gray-500 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 required
               />
               <button

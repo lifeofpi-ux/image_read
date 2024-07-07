@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { updateProfile, deleteUser } from 'firebase/auth';
+import { updateProfile, updatePassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { updateDoc, doc, collection, query, where, getDocs, deleteDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
@@ -11,6 +11,9 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
     openaiKey: '',
     deploymentCode: '',
   });
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isEmailChecked, setIsEmailChecked] = useState(true);
@@ -64,7 +67,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
   }, [user]);
 
   const checkNicknameExists = useCallback(async (nickname) => {
-    if (!user || nickname === user.nickname) return false;
+    if (!user || nickname === user.displayName) return false;
     const q = query(collection(db, "users"), where("nickname", "==", nickname));
     const querySnapshot = await getDocs(q);
     return !querySnapshot.empty;
@@ -142,10 +145,23 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
       setError("학급 코드는 4자리여야 합니다.");
       return;
     }
+    if (newPassword !== confirmNewPassword) {
+      setError("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
     try {
+      // Reauthenticate user
+      const credential = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, credential);
+
+      // Update password if new password is provided
+      if (newPassword) {
+        await updatePassword(user, newPassword);
+      }
+
       // Update displayName in Firebase Auth
       await updateProfile(auth.currentUser, { displayName: formData.nickname });
 
@@ -157,7 +173,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
       onClose();
     } catch (error) {
       console.error("Profile update error:", error);
-      setError("프로필 업데이트 중 오류가 발생했습니다.");
+      setError("프로필 업데이트 중 오류가 발생했습니다. 현재 비밀번호를 확인해주세요.");
     } finally {
       setIsLoading(false);
     }
@@ -169,6 +185,10 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
       setIsLoading(true);
       setError(null);
       try {
+        // Reauthenticate user
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+
         // Delete user data from Firestore
         await deleteDoc(doc(db, "users", user.uid));
         
@@ -179,7 +199,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
         onClose();
       } catch (error) {
         console.error("Account deletion error:", error);
-        setError("회원 탈퇴 중 오류가 발생했습니다.");
+        setError("회원 탈퇴 중 오류가 발생했습니다. 현재 비밀번호를 확인해주세요.");
       } finally {
         setIsLoading(false);
       }
@@ -194,7 +214,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md overflow-y-auto max-h-[90vh]">
         <h2 className="text-2xl font-bold mb-6 text-center">프로필 수정</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">이메일</label>
             <div className="mt-1 flex rounded-md shadow-sm">
@@ -206,6 +226,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
                 onChange={handleInputChange}
                 className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 required
+                autoComplete="off"
               />
               <button
                 type="button"
@@ -228,6 +249,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
                 onChange={handleInputChange}
                 className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-l-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                 required
+                autoComplete="off"
               />
               <button
                 type="button"
@@ -250,18 +272,57 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
               className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               maxLength={4}
               required
+              autoComplete="off"
             />
           </div>
           <div>
             <label htmlFor="openaiKey" className="block text-sm font-medium text-gray-700">OpenAI API 키</label>
             <input
-              type="password"
+              type="text"
               id="openaiKey"
               name="openaiKey"
               value={formData.openaiKey}
               onChange={handleInputChange}
               className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
               required
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="current-password" className="block text-sm font-medium text-gray-700">현재 비밀번호</label>
+            <input
+              type="password"
+              id="current-password"
+              name="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              required
+              autoComplete="current-password"
+            />
+          </div>
+          <div>
+            <label htmlFor="new-password" className="block text-sm font-medium text-gray-700">새 비밀번호 (변경하지 않으려면 비워두세요)</label>
+            <input
+              type="password"
+              id="new-password"
+              name="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label htmlFor="confirm-new-password" className="block text-sm font-medium text-gray-700">새 비밀번호 확인</label>
+            <input
+              type="password"
+              id="confirm-new-password"
+              name="confirm-new-password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              autoComplete="new-password"
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}
