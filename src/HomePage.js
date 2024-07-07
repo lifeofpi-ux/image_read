@@ -70,13 +70,13 @@ const HomePage = ({
           <div className="flex space-x-4 mb-5">
             <button 
               onClick={() => setIsLoginModalOpen(true)}
-              className="px-6 w-full py-2 bg-indigo-500 text-white rounded-lg shadow-lg hover:bg-indigo-600 transition duration-300 text-center font-semibold"
+              className="px-6 mt-6 w-full py-2 bg-indigo-500 text-white rounded-lg shadow-lg hover:bg-indigo-600 transition duration-300 text-center font-semibold"
             >
               👩🏻‍🏫 선생님
             </button>
             <button 
               onClick={() => setIsStudentLoginModalOpen(true)}
-              className="px-6 w-full py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition duration-300 text-center font-semibold"
+              className="px-6 mt-6 w-full py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition duration-300 text-center font-semibold"
             >
               👩🏻‍💻 학생
             </button>

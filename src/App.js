@@ -34,6 +34,7 @@ function App() {
       Cookies.remove('studentSession');
       setStudentSession(null);
       setUser(null);
+      setIsEditProfileModalOpen(false); // 로그아웃 시 프로필 수정 모달 닫기
     } catch (error) {
       console.error("로그아웃 중 오류 발생:", error);
     }
@@ -86,6 +87,7 @@ function App() {
       } else {
         console.log("No authenticated user");
         setUser(null);
+        setIsEditProfileModalOpen(false); // 사용자 인증이 없을 때 프로필 수정 모달 닫기
       }
     });
 
@@ -131,6 +133,15 @@ function App() {
   const handleProfileUpdate = useCallback((updatedUser) => {
     setUser(updatedUser);
     setLoginSuccessInfo(prev => ({ ...prev, nickname: updatedUser.nickname }));
+  }, []);
+
+  const handleProfileDelete = useCallback(() => {
+    setUser(null);
+    setIsEditProfileModalOpen(false);
+    // 추가적인 로그아웃 처리나 상태 초기화를 여기에 추가할 수 있습니다.
+    Cookies.remove('studentSession');
+    setStudentSession(null);
+    setShowLoginSuccess(false);
   }, []);
 
   const Modal = () => (
@@ -303,6 +314,7 @@ function App() {
             user={user}
             onClose={() => setIsEditProfileModalOpen(false)}
             onUpdate={handleProfileUpdate}
+            onDelete={handleProfileDelete}
           />
         )}
       </div>
