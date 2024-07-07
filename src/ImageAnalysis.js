@@ -200,14 +200,14 @@ function ImageAnalysis() {
   const [isRubricModalOpen, setIsRubricModalOpen] = useState(false);
   const [selectedRubric, setSelectedRubric] = useState(null);
   const [isPopupVisible, setIsPopupVisible] = useState(true);
-  const [studentSession, setStudentSession] = useState(() => {
+  const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
     return sessionData ? JSON.parse(sessionData) : null;
   });
 
   const fetchRubrics = useCallback(async () => {
     const user = auth.currentUser;
-    const teacherId = studentSession ? studentSession.teacherId : user.uid;
+    const teacherId = studentSession ? studentSession.teacherId : user?.uid;
     if (!teacherId) return;
 
     const rubricsRef = collection(db, "iRubric");
@@ -225,15 +225,9 @@ function ImageAnalysis() {
     }
   }, [currentRubric, studentSession]);
 
-  useEffect(() => {
-    fetchRecentAnalyses();
-    fetchRecentPrompts();
-    fetchRubrics();
-  }, [fetchRubrics]);
-
-  const fetchRecentAnalyses = async () => {
+  const fetchRecentAnalyses = useCallback(async () => {
     const user = auth.currentUser;
-    const teacherId = studentSession ? studentSession.teacherId : user.uid;
+    const teacherId = studentSession ? studentSession.teacherId : user?.uid;
     if (!teacherId) return;
 
     const analysesRef = collection(db, "analysisResults");
@@ -241,11 +235,11 @@ function ImageAnalysis() {
     const querySnapshot = await getDocs(q);
     const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setAnalysisHistory(recentAnalyses);
-  };
+  }, [studentSession]);
 
-  const fetchRecentPrompts = async () => {
+  const fetchRecentPrompts = useCallback(async () => {
     const user = auth.currentUser;
-    const teacherId = studentSession ? studentSession.teacherId : user.uid;
+    const teacherId = studentSession ? studentSession.teacherId : user?.uid;
     if (!teacherId) return;
 
     try {
@@ -258,7 +252,13 @@ function ImageAnalysis() {
       console.error("최근 프롬프트를 가져오는 중 오류 발생:", error);
       setRecentPrompts([]);
     }
-  };
+  }, [studentSession]);
+
+  useEffect(() => {
+    fetchRecentAnalyses();
+    fetchRecentPrompts();
+    fetchRubrics();
+  }, [fetchRecentAnalyses, fetchRecentPrompts, fetchRubrics]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -333,7 +333,7 @@ function ImageAnalysis() {
   const saveResult = async (analysisResult, userPrompt) => {
     const user = auth.currentUser;
     const session = studentSession || {};
-    const teacherId = session.teacherId || user.uid;
+    const teacherId = session.teacherId || user?.uid;
 
     if (!teacherId) return;
 
@@ -363,7 +363,7 @@ function ImageAnalysis() {
   const handleSaveRubric = async (newRubric) => {
     const user = auth.currentUser;
     const session = studentSession || {};
-    const teacherId = session.teacherId || user.uid;
+    const teacherId = session.teacherId || user?.uid;
 
     if (!teacherId) return;
 
@@ -385,7 +385,7 @@ function ImageAnalysis() {
   const handleUpdateRubric = async (updatedRubric) => {
     const user = auth.currentUser;
     const session = studentSession || {};
-    const teacherId = session.teacherId || user.uid;
+    const teacherId = session.teacherId || user?.uid;
 
     if (!teacherId) return;
 
@@ -408,7 +408,7 @@ function ImageAnalysis() {
   const handleDeleteRubric = async (rubricId) => {
     const user = auth.currentUser;
     const session = studentSession || {};
-    const teacherId = session.teacherId || user.uid;
+    const teacherId = session.teacherId || user?.uid;
 
     if (!teacherId) return;
 
@@ -434,7 +434,6 @@ function ImageAnalysis() {
     setCurrentRubric(rubric);
     setIsRubricModalOpen(false);
     
-    // 루브릭 내용을 프롬프트에 적용
     const rubricPrompt = `평가 주제: ${rubric.summary}
 성취기준: ${rubric.acnum}
 평가 프롬프트: ${rubric.rubric}
@@ -553,7 +552,6 @@ function ImageAnalysis() {
               )}
 
               <div className="w-full flex mt-8">
-                {/* 최근 프롬프트 (왼쪽) */}
                 <div className="w-1/2 pr-4">
                   <h3 className="text-base font-semibold mb-4">📑 최근 프롬프트</h3>
                   <div className="flex flex-col space-y-3">
@@ -563,7 +561,6 @@ function ImageAnalysis() {
                   </div>
                 </div>
 
-                {/* 최근 분석 결과 (오른쪽) */}
                 <div className="w-1/2 pl-4">
                   <h3 className="text-base font-semibold mb-4">📰 최근 분석 결과</h3>
                   <div className="flex flex-col space-y-3">
@@ -582,7 +579,6 @@ function ImageAnalysis() {
         </div>
       </div>
       
-      {/* Right side tab */}
       <div 
         className={`fixed right-0 bg-white shadow-lg transform ${isRightSideTabOpen ? 'translate-x-0' : 'translate-x-full'} transition duration-300 ease-in-out z-50 side-tab`} 
         style={{
@@ -630,7 +626,6 @@ function ImageAnalysis() {
         </div>
       </div>
 
-      {/* Right side tab toggle button */}
       <MiniPopup 
         isVisible={isPopupVisible}
         onClose={() => setIsPopupVisible(false)}

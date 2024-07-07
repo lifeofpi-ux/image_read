@@ -26,7 +26,7 @@ const Modal = ({ isOpen, onClose, content }) => {
         <p className="mb-4 font-light whitespace-break-spaces">👉 학생 산출물 {content.prompt}</p>
         <p className="mb-4 whitespace-break-spaces">{content.result}</p>
         <p className="text-sm text-gray-500 mb-4">
-          ⏱️평가 시간: {new Date(content.createdAt?.toDate()).toLocaleString()}
+        ⏱️평가 시간: {new Date(content.createdAt?.toDate()).toLocaleString()}
         </p>
         <div className="w-full">
           <button
@@ -118,7 +118,7 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
               </button>
             </div>
             <div>
-              <button
+             <button
                 type="button"
                 onClick={() => onApply(rubric)}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300 mr-2"
@@ -176,7 +176,7 @@ const RubricDetailModal = ({ isOpen, onClose, rubric }) => {
         <h2 className="text-xl font-bold mb-4">🏷️ 루브릭 상세 정보</h2>
         <div className="mb-4">
           <h3 className="mb-2 font-semibold">🪴 평가 주제</h3>
-          <p className="ml-6">{rubric.summary}</p>
+          <p className="ml-6" >{rubric.summary}</p>
         </div>
         <div className="mb-4">
           <h3 className="mb-2 font-semibold">🧩 성취기준</h3>
@@ -226,22 +226,21 @@ function RubricReportAI() {
   const [selectedRubric, setSelectedRubric] = useState(null);
   const [isPopupVisible, setIsPopupVisible] = useState(true);
   const [isRubricDetailModalOpen, setIsRubricDetailModalOpen] = useState(false);
+  const [studentSession] = useState(() => {
+    const sessionData = Cookies.get('studentSession');
+    return sessionData ? JSON.parse(sessionData) : null;
+  });
 
   const fetchRubrics = useCallback(async () => {
     const user = auth.currentUser;
-    const studentSession = Cookies.get('studentSession');
-    let teacherId = user?.uid;
-
-    if (studentSession) {
-      const parsedSession = JSON.parse(studentSession);
-      teacherId = parsedSession.teacherId;
-    }
+    const session = studentSession;
+    if (!user && !session) return;
 
     const rubricsRef = collection(db, "Rubric");
     const q = query(
-      rubricsRef,
-      where("userId", "==", teacherId),
-      orderBy("createdAt", "desc"),
+      rubricsRef, 
+      where("userId", "==", user ? user.uid : session.teacherId), 
+      orderBy("createdAt", "desc"), 
       limit(5)
     );
     const querySnapshot = await getDocs(q);
@@ -250,34 +249,29 @@ function RubricReportAI() {
     if (rubricList.length > 0 && !currentRubric) {
       setCurrentRubric(rubricList[0]);
     }
-  }, [currentRubric]);
+  }, [currentRubric, studentSession]);
 
-  useEffect(() => {
-    fetchRecentAnalyses();
-    fetchRubrics();
-  }, [fetchRubrics]);
-
-  const fetchRecentAnalyses = async () => {
+  const fetchRecentAnalyses = useCallback(async () => {
     const user = auth.currentUser;
-    const studentSession = Cookies.get('studentSession');
-    let teacherId = user?.uid;
-
-    if (studentSession) {
-      const parsedSession = JSON.parse(studentSession);
-      teacherId = parsedSession.teacherId;
-    }
+    const session = studentSession;
+    if (!user && !session) return;
 
     const analysesRef = collection(db, "RanalysisResults");
     const q = query(
-      analysesRef,
-      where("userId", "==", teacherId),
-      orderBy("createdAt", "desc"),
+      analysesRef, 
+      where("userId", "==", user ? user.uid : session.teacherId), 
+      orderBy("createdAt", "desc"), 
       limit(3)
     );
     const querySnapshot = await getDocs(q);
     const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setAnalysisHistory(recentAnalyses);
-  };
+  }, [studentSession]);
+
+  useEffect(() => {
+    fetchRecentAnalyses();
+    fetchRubrics();
+  }, [fetchRecentAnalyses, fetchRubrics]);
 
   const analyzeReport = async () => {
     const studentSession = Cookies.get('studentSession');
@@ -293,7 +287,7 @@ function RubricReportAI() {
     setTokensUsed(0);
     setSaveStatus('');
 
-    let teacherId = user?.uid;
+    let teacherId = null;
     if (studentSession) {
       const parsedSession = JSON.parse(studentSession);
       teacherId = parsedSession.teacherId;
@@ -332,18 +326,13 @@ function RubricReportAI() {
 
   const handleSaveRubric = async (newRubric) => {
     const user = auth.currentUser;
-    const studentSession = Cookies.get('studentSession');
-    let teacherId = user?.uid;
-
-    if (studentSession) {
-      const parsedSession = JSON.parse(studentSession);
-      teacherId = parsedSession.teacherId;
-    }
+    const session = studentSession;
+    if (!user && !session) return;
 
     try {
       const docRef = await addDoc(collection(db, "Rubric"), {
         ...newRubric,
-        userId: teacherId,
+        userId: user ? user.uid : session.teacherId,
         createdAt: serverTimestamp()
       });
       console.log("Rubric saved with ID: ", docRef.id);
@@ -357,19 +346,13 @@ function RubricReportAI() {
 
   const handleUpdateRubric = async (updatedRubric) => {
     const user = auth.currentUser;
-    const studentSession = Cookies.get('studentSession');
-    let teacherId = user?.uid;
-
-    if (studentSession) {
-      const parsedSession = JSON.parse(studentSession);
-      teacherId = parsedSession.teacherId;
-    }
+    const session = studentSession;
+    if (!user && !session) return;
 
     try {
       const rubricRef = doc(db, "Rubric", updatedRubric.id);
       await updateDoc(rubricRef, {
         ...updatedRubric,
-        userId: teacherId,
         updatedAt: serverTimestamp()
       });
       console.log("Rubric updated with ID: ", updatedRubric.id);
@@ -383,13 +366,8 @@ function RubricReportAI() {
 
   const handleDeleteRubric = async (rubricId) => {
     const user = auth.currentUser;
-    const studentSession = Cookies.get('studentSession');
-    let teacherId = user?.uid;
-
-    if (studentSession) {
-      const parsedSession = JSON.parse(studentSession);
-      teacherId = parsedSession.teacherId;
-    }
+    const session = studentSession;
+    if (!user && !session) return;
 
     if (window.confirm('이 루브릭을 삭제하시겠습니까?')) {
       try {
@@ -406,17 +384,11 @@ function RubricReportAI() {
 
   const saveResult = async (analysisResult, userPrompt) => {
     const user = auth.currentUser;
-    const studentSession = Cookies.get('studentSession');
-    let teacherId = user?.uid;
-
-    if (studentSession) {
-      const parsedSession = JSON.parse(studentSession);
-      teacherId = parsedSession.teacherId;
-    }
+    if (!user) return;
 
     try {
       const docRef = await addDoc(collection(db, "RanalysisResults"), {
-        userId: teacherId,
+        userId: user.uid,
         result: analysisResult,
         prompt: userPrompt,
         createdAt: serverTimestamp()
@@ -541,17 +513,17 @@ function RubricReportAI() {
               <div className="w-full flex mt-8">
                 {/* 최근 분석 결과 */}
                 <div className="w-full mt-8">
-                  <h3 className="text-base font-semibold mb-4">📰 최근 분석 결과</h3>
-                  <div className="flex flex-col space-y-3">
-                    {analysisHistory.slice(0, 3).map((item) => (
-                      <HistoryItem 
-                        key={item.id} 
-                        item={item} 
-                        onClick={(item) => {setModalContent(item); setIsModalOpen(true);}} 
-                      />
-                    ))}
-                  </div>
+                <h3 className="text-base font-semibold mb-4">📰 최근 분석 결과</h3>
+                <div className="flex flex-col space-y-3">
+                  {analysisHistory.slice(0, 3).map((item) => (
+                    <HistoryItem 
+                      key={item.id} 
+                      item={item} 
+                      onClick={(item) => {setModalContent(item); setIsModalOpen(true);}} 
+                    />
+                  ))}
                 </div>
+              </div>
               </div>
             </div>
           </div>
