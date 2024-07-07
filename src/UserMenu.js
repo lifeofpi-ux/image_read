@@ -32,7 +32,7 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-full transition duration-300"
+        className="flex items-center space-x-2 bg-green-100 hover:bg-green-200 px-4 py-2 rounded-full transition duration-300"
       >
         <FaUser className="text-gray-600" />
         <span className="text-gray-800 font-medium">{displayName}</span>

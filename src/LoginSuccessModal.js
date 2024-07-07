@@ -4,11 +4,11 @@ const LoginSuccessModal = ({ onClose, userType, nickname }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl">
-        <h2 className="text-2xl font-bold mb-4">로그인 성공</h2>
+        <h2 className="text-2xl text-center font-bold mb-4">로그인 성공</h2>
         <p className="mb-4">
           {userType === 'teacher' 
-            ? `${nickname || '선생님'}, 환영합니다!` 
-            : `${nickname || '선생님'}의 학생으로 로그인되었습니다.`}
+            ? `${nickname}, 환영합니다!` 
+            : `${nickname} 선생님의 학생으로 로그인되었습니다.`}
         </p>
         <button
           onClick={onClose}

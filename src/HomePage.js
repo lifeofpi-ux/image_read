@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
+import Cookies from 'js-cookie';
 import { auth } from './firebase';
 
 const HomePage = ({ 
@@ -24,9 +25,14 @@ const HomePage = ({
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      if (user) {
+        await signOut(auth);
+      } else if (studentSession) {
+        Cookies.remove('studentSession');
+      }
       // 로그아웃 후 필요한 상태 초기화
       navigate('/');
+      window.location.reload(); // 페이지 새로고침
     } catch (error) {
       console.error("로그아웃 중 오류 발생:", error);
     }
@@ -37,11 +43,25 @@ const HomePage = ({
       <h1 className="text-4xl font-bold mb-1 text-gray-800">T.R.I.P.O.D.</h1>
       <h1 className="text-sm font-bold mb-10 text-gray-400">수업, 평가, 교육 그리고 사람들</h1>
       <div className="space-y-5">
+        
+        <button 
+          onClick={() => (user || studentSession) ? navigate("/rubric-report") : setIsLoginModalOpen(true)}
+          className="min-w-300 block px-11 py-3 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition duration-300 text-center text-lg font-semibold"
+        >
+          📝 루브릭 레포트 AI
+        </button>
+        <button
+          onClick={() => (user || studentSession) ? navigate("/image-analysis") : setIsLoginModalOpen(true)}
+          className="min-w-300 block px-11 py-3 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition duration-300 text-center text-lg font-semibold"
+        >
+          🏠 이미지 평가 AI
+        </button>
+
         {user || studentSession ? (
           <div className="mb-5">
             <button 
               onClick={handleLogout}
-              className="w-full text-lg px-6 py-3 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition duration-300 text-center font-semibold"
+              className="w-full text-lg px-6 py-2 mt-6 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition duration-300 text-center font-semibold"
             >
               로그아웃
             </button>
@@ -62,18 +82,6 @@ const HomePage = ({
             </button>
           </div>
         )}
-        <button 
-          onClick={() => (user || studentSession) ? navigate("/rubric-report") : setIsLoginModalOpen(true)}
-          className="min-w-300 block px-11 py-3 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition duration-300 text-center text-lg font-semibold"
-        >
-          📝 루브릭 레포트 AI
-        </button>
-        <button
-          onClick={() => (user || studentSession) ? navigate("/image-analysis") : setIsLoginModalOpen(true)}
-          className="min-w-300 block px-11 py-3 bg-green-500 text-white rounded-lg shadow-lg hover:bg-green-600 transition duration-300 text-center text-lg font-semibold"
-        >
-          🏠 이미지 평가 AI
-        </button>
       </div>
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
         <div className="flex justify-center items-center space-x-6">

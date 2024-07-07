@@ -3,6 +3,7 @@ import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, do
 import { auth, db } from './firebase';
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
+import Cookies from 'js-cookie';
 import './App.css';
 import './custom.css';
 
@@ -199,15 +200,20 @@ function ImageAnalysis() {
   const [isRubricModalOpen, setIsRubricModalOpen] = useState(false);
   const [selectedRubric, setSelectedRubric] = useState(null);
   const [isPopupVisible, setIsPopupVisible] = useState(true);
+  const [studentSession, setStudentSession] = useState(() => {
+    const sessionData = Cookies.get('studentSession');
+    return sessionData ? JSON.parse(sessionData) : null;
+  });
 
   const fetchRubrics = useCallback(async () => {
     const user = auth.currentUser;
-    if (!user) return;
+    const teacherId = studentSession ? studentSession.teacherId : user.uid;
+    if (!teacherId) return;
 
     const rubricsRef = collection(db, "iRubric");
     const q = query(
       rubricsRef, 
-      where("userId", "==", user.uid), 
+      where("userId", "==", teacherId), 
       orderBy("createdAt", "desc"), 
       limit(5)
     );
@@ -217,7 +223,7 @@ function ImageAnalysis() {
     if (rubricList.length > 0 && !currentRubric) {
       setCurrentRubric(rubricList[0]);
     }
-  }, [currentRubric]);
+  }, [currentRubric, studentSession]);
 
   useEffect(() => {
     fetchRecentAnalyses();
@@ -227,10 +233,11 @@ function ImageAnalysis() {
 
   const fetchRecentAnalyses = async () => {
     const user = auth.currentUser;
-    if (!user) return;
+    const teacherId = studentSession ? studentSession.teacherId : user.uid;
+    if (!teacherId) return;
 
     const analysesRef = collection(db, "analysisResults");
-    const q = query(analysesRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(3));
+    const q = query(analysesRef, where("userId", "==", teacherId), orderBy("createdAt", "desc"), limit(3));
     const querySnapshot = await getDocs(q);
     const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setAnalysisHistory(recentAnalyses);
@@ -238,11 +245,12 @@ function ImageAnalysis() {
 
   const fetchRecentPrompts = async () => {
     const user = auth.currentUser;
-    if (!user) return;
+    const teacherId = studentSession ? studentSession.teacherId : user.uid;
+    if (!teacherId) return;
 
     try {
       const promptsRef = collection(db, "analysisResults");
-      const q = query(promptsRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(5));
+      const q = query(promptsRef, where("userId", "==", teacherId), orderBy("createdAt", "desc"), limit(5));
       const querySnapshot = await getDocs(q);
       const prompts = querySnapshot.docs.map(doc => doc.data().prompt).filter(Boolean);
       setRecentPrompts([...new Set(prompts)]);
@@ -276,6 +284,14 @@ function ImageAnalysis() {
 
     const croppedCanvas = cropperRef.current.cropper.getCroppedCanvas();
     const croppedImage = croppedCanvas.toDataURL('image/png');
+    const user = auth.currentUser;
+    const session = studentSession || {};
+
+    if (!user && !session.teacherId) {
+      alert('로그인이 필요합니다.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch(API_URL, {
@@ -283,7 +299,12 @@ function ImageAnalysis() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ image: croppedImage, prompt })
+        body: JSON.stringify({ 
+          image: croppedImage, 
+          prompt, 
+          userId: user ? user.uid : null,
+          teacherId: session.teacherId || null
+        })
       });
 
       if (!response.ok) {
@@ -311,11 +332,14 @@ function ImageAnalysis() {
 
   const saveResult = async (analysisResult, userPrompt) => {
     const user = auth.currentUser;
-    if (!user) return;
+    const session = studentSession || {};
+    const teacherId = session.teacherId || user.uid;
+
+    if (!teacherId) return;
 
     try {
       await addDoc(collection(db, "analysisResults"), {
-        userId: user.uid,
+        userId: teacherId,
         result: analysisResult,
         prompt: userPrompt,
         createdAt: serverTimestamp()
@@ -338,12 +362,15 @@ function ImageAnalysis() {
 
   const handleSaveRubric = async (newRubric) => {
     const user = auth.currentUser;
-    if (!user) return;
+    const session = studentSession || {};
+    const teacherId = session.teacherId || user.uid;
+
+    if (!teacherId) return;
 
     try {
       const docRef = await addDoc(collection(db, "iRubric"), {
         ...newRubric,
-        userId: user.uid,
+        userId: teacherId,
         createdAt: serverTimestamp()
       });
       console.log("Rubric saved with ID: ", docRef.id);
@@ -357,12 +384,16 @@ function ImageAnalysis() {
 
   const handleUpdateRubric = async (updatedRubric) => {
     const user = auth.currentUser;
-    if (!user) return;
+    const session = studentSession || {};
+    const teacherId = session.teacherId || user.uid;
+
+    if (!teacherId) return;
 
     try {
       const rubricRef = doc(db, "iRubric", updatedRubric.id);
       await updateDoc(rubricRef, {
         ...updatedRubric,
+        userId: teacherId,
         updatedAt: serverTimestamp()
       });
       console.log("Rubric updated with ID: ", updatedRubric.id);
@@ -376,7 +407,10 @@ function ImageAnalysis() {
 
   const handleDeleteRubric = async (rubricId) => {
     const user = auth.currentUser;
-    if (!user) return;
+    const session = studentSession || {};
+    const teacherId = session.teacherId || user.uid;
+
+    if (!teacherId) return;
 
     if (window.confirm('이 루브릭을 삭제하시겠습니까?')) {
       try {
