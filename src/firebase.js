@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -30,7 +31,13 @@ if (missingEnvVars.length > 0) {
   throw new Error('Missing required environment variables');
 }
 
+// Firebase 앱 초기화
 const app = initializeApp(firebaseConfig);
+
+// Firestore 초기화
 const db = getFirestore(app);
 
-export { db };
+// Firebase 인증 초기화
+const auth = getAuth(app);
+
+export { db, auth };

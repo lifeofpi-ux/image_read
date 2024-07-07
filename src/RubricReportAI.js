@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { db, auth } from './firebase';
 import './App.css';
 import './custom.css';
 
@@ -130,7 +130,6 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
               >
                 저장
               </button>
-             
             </div>
           </div>
         </form>
@@ -144,9 +143,9 @@ const MiniPopup = ({ isVisible, onClose }) => {
 
   return (
     <div 
-      className="absolute px-2 top-10 right-40 mt-2 mr-2 bg-black text-white text-sm rounded p-2 z-10 shadow-lg"
+      className="px-2 top-10 right-40 mt-2 mr-2 bg-black text-white text-sm rounded p-2 z-10 shadow-lg"
       style={{ 
-        position: 'absolute', 
+        position: 'fixed', 
         top: '10px', 
         right: '50px',
         animation: 'blink 2s linear infinite'
@@ -228,8 +227,16 @@ function RubricReportAI() {
   const [isRubricDetailModalOpen, setIsRubricDetailModalOpen] = useState(false);
 
   const fetchRubrics = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     const rubricsRef = collection(db, "Rubric");
-    const q = query(rubricsRef, orderBy("createdAt", "desc"));
+    const q = query(
+      rubricsRef,
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc"),
+      limit(5)
+    );
     const querySnapshot = await getDocs(q);
     const rubricList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setRubrics(rubricList);
@@ -244,8 +251,16 @@ function RubricReportAI() {
   }, [fetchRubrics]);
 
   const fetchRecentAnalyses = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     const analysesRef = collection(db, "RanalysisResults");
-    const q = query(analysesRef, orderBy("createdAt", "desc"), limit(3));
+    const q = query(
+      analysesRef,
+      where("userId", "==", user.uid),
+      orderBy("createdAt", "desc"),
+      limit(3)
+    );
     const querySnapshot = await getDocs(q);
     const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setAnalysisHistory(recentAnalyses);
@@ -294,9 +309,13 @@ function RubricReportAI() {
   };
 
   const handleSaveRubric = async (newRubric) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       const docRef = await addDoc(collection(db, "Rubric"), {
         ...newRubric,
+        userId: user.uid,
         createdAt: serverTimestamp()
       });
       console.log("Rubric saved with ID: ", docRef.id);
@@ -309,10 +328,14 @@ function RubricReportAI() {
   };
 
   const handleUpdateRubric = async (updatedRubric) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       const rubricRef = doc(db, "Rubric", updatedRubric.id);
       await updateDoc(rubricRef, {
         ...updatedRubric,
+        userId: user.uid,
         updatedAt: serverTimestamp()
       });
       console.log("Rubric updated with ID: ", updatedRubric.id);
@@ -325,6 +348,9 @@ function RubricReportAI() {
   };
 
   const handleDeleteRubric = async (rubricId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     if (window.confirm('이 루브릭을 삭제하시겠습니까?')) {
       try {
         await deleteDoc(doc(db, "Rubric", rubricId));
@@ -339,8 +365,12 @@ function RubricReportAI() {
   };
 
   const saveResult = async (analysisResult, userPrompt) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       const docRef = await addDoc(collection(db, "RanalysisResults"), {
+        userId: user.uid,
         result: analysisResult,
         prompt: userPrompt,
         createdAt: serverTimestamp()

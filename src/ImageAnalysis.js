@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { collection, addDoc, serverTimestamp, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { auth, db } from './firebase';
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import './App.css';
@@ -140,11 +140,10 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
               </button>
               <button
                 type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300 "
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
               >
                 저장
               </button>
-              
             </div>
           </div>
         </form>
@@ -158,7 +157,7 @@ const MiniPopup = ({ isVisible, onClose }) => {
 
   return (
     <div 
-      className="absolute px-2 top-10 right-40 mt-2 mr-2 bg-black text-white text-sm rounded p-2 z-10 shadow-lg"
+      className="px-2 top-10 right-40 mt-2 mr-2 bg-black text-white text-sm rounded p-2 z-10 shadow-lg"
       style={{ 
         position: 'fixed', 
         top: '10px', 
@@ -174,7 +173,7 @@ const MiniPopup = ({ isVisible, onClose }) => {
         }
       `}</style>
       <span>❤️ 평가 프롬프트 설정</span>
-      <button onClick={onClose} className="ml-2 text-gray-400 hover:text-gray-200 ">
+      <button onClick={onClose} className="ml-2 text-gray-400 hover:text-gray-200">
         &times;
       </button>
     </div>
@@ -202,8 +201,16 @@ function ImageAnalysis() {
   const [isPopupVisible, setIsPopupVisible] = useState(true);
 
   const fetchRubrics = useCallback(async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     const rubricsRef = collection(db, "iRubric");
-    const q = query(rubricsRef, orderBy("createdAt", "desc"));
+    const q = query(
+      rubricsRef, 
+      where("userId", "==", user.uid), 
+      orderBy("createdAt", "desc"), 
+      limit(5)
+    );
     const querySnapshot = await getDocs(q);
     const rubricList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setRubrics(rubricList);
@@ -219,17 +226,23 @@ function ImageAnalysis() {
   }, [fetchRubrics]);
 
   const fetchRecentAnalyses = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     const analysesRef = collection(db, "analysisResults");
-    const q = query(analysesRef, orderBy("createdAt", "desc"), limit(3));
+    const q = query(analysesRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(3));
     const querySnapshot = await getDocs(q);
     const recentAnalyses = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setAnalysisHistory(recentAnalyses);
   };
 
   const fetchRecentPrompts = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       const promptsRef = collection(db, "analysisResults");
-      const q = query(promptsRef, orderBy("createdAt", "desc"), limit(5));
+      const q = query(promptsRef, where("userId", "==", user.uid), orderBy("createdAt", "desc"), limit(5));
       const querySnapshot = await getDocs(q);
       const prompts = querySnapshot.docs.map(doc => doc.data().prompt).filter(Boolean);
       setRecentPrompts([...new Set(prompts)]);
@@ -297,8 +310,12 @@ function ImageAnalysis() {
   };
 
   const saveResult = async (analysisResult, userPrompt) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       await addDoc(collection(db, "analysisResults"), {
+        userId: user.uid,
         result: analysisResult,
         prompt: userPrompt,
         createdAt: serverTimestamp()
@@ -320,9 +337,13 @@ function ImageAnalysis() {
   };
 
   const handleSaveRubric = async (newRubric) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       const docRef = await addDoc(collection(db, "iRubric"), {
         ...newRubric,
+        userId: user.uid,
         createdAt: serverTimestamp()
       });
       console.log("Rubric saved with ID: ", docRef.id);
@@ -335,6 +356,9 @@ function ImageAnalysis() {
   };
 
   const handleUpdateRubric = async (updatedRubric) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     try {
       const rubricRef = doc(db, "iRubric", updatedRubric.id);
       await updateDoc(rubricRef, {
@@ -351,6 +375,9 @@ function ImageAnalysis() {
   };
 
   const handleDeleteRubric = async (rubricId) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
     if (window.confirm('이 루브릭을 삭제하시겠습니까?')) {
       try {
         await deleteDoc(doc(db, "iRubric", rubricId));
@@ -579,8 +606,8 @@ function ImageAnalysis() {
         className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
       >
         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       </button>
 

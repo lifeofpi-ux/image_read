@@ -11,3 +11,18 @@
     border: 3px solid #4A90E2;  /* 포커스 시 적용할 테두리 스타일 */
     outline: none;
   }
+
+.fix {
+    position: fixed;
+    width: 100%;
+    z-index: 1;
+}
+
+.min-h-custom {
+    min-height: calc(100vh - 72px)
+}
+
+
+
+
+
