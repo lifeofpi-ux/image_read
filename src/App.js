@@ -49,7 +49,7 @@ function App() {
           const userDocRef = doc(db, "users", authUser.uid);
           const userDoc = await getDoc(userDocRef);
           
-          let nickname = authUser.displayName || '선생님';
+          let nickname = authUser.displayName;
           if (userDoc.exists()) {
             const userData = userDoc.data();
             console.log("Firestore User Data:", userData);
