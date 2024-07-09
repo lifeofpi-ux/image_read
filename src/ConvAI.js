@@ -11,7 +11,6 @@ const API_URL = '/api/conv-ai';
 
 const ChatMessage = ({ message, isFirstMessage }) => {
   const [displayedContent, setDisplayedContent] = useState('');
-  const [isComplete, setIsComplete] = useState(false);
 
   useEffect(() => {
     if (message.role === 'assistant') {
@@ -21,13 +20,11 @@ const ChatMessage = ({ message, isFirstMessage }) => {
         index++;
         if (index > message.content.length) {
           clearInterval(intervalId);
-          setIsComplete(true);
         }
       }, 20);
       return () => clearInterval(intervalId);
     } else {
       setDisplayedContent(message.content);
-      setIsComplete(true);
     }
   }, [message]);
 
@@ -35,7 +32,7 @@ const ChatMessage = ({ message, isFirstMessage }) => {
 
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div style={{ whiteSpace: 'break-spaces'}} className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+      <div style={{ whiteSpace: 'break-spaces' }} className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
         message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
       }`}>
         {displayedContent}
