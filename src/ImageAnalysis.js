@@ -55,6 +55,25 @@ const PromptButton = ({ prompt, onClick }) => {
   );
 };
 
+const NotificationModal = ({ isOpen, message, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg max-w-80 w-full shadow-lg">
+        <h2 className="text-xl font-bold mb-4">알림</h2>
+        <p>{message}</p>
+        <button
+          onClick={onClose}
+          className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
+        >
+          닫기
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric }) => {
   const [rubric, setRubric] = useState(initialRubric || {
     summary: '',
@@ -68,6 +87,15 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
   useEffect(() => {
     if (initialRubric) {
       setRubric(initialRubric);
+    } else {
+      setRubric({
+        summary: '',
+        acnum: '',
+        rubric: '',
+        high: '',
+        mid: '',
+        low: ''
+      });
     }
   }, [initialRubric]);
 
@@ -114,7 +142,7 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
           ))}
           <div className="flex justify-between items-center mt-6">
             <div>
-              {onDelete && (
+              {onDelete && rubric.id && (
                 <button
                   type="button"
                   onClick={() => onDelete(rubric.id)}
@@ -135,7 +163,7 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
               <button
                 type="button"
                 onClick={() => onApply(rubric)}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300 mr-2" 
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-300 mr-2"
               >
                 프롬프트 적용
               </button>
@@ -143,7 +171,7 @@ const RubricModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialRubric
                 type="submit"
                 className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
               >
-                저장
+                {rubric.id ? '수정' : '저장'}
               </button>
             </div>
           </div>
@@ -200,6 +228,8 @@ function ImageAnalysis() {
   const [isRubricModalOpen, setIsRubricModalOpen] = useState(false);
   const [selectedRubric, setSelectedRubric] = useState(null);
   const [isPopupVisible, setIsPopupVisible] = useState(true);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
     return sessionData ? JSON.parse(sessionData) : null;
@@ -365,43 +395,61 @@ function ImageAnalysis() {
     const session = studentSession || {};
     const teacherId = session.teacherId || user?.uid;
 
-    if (!teacherId) return;
-
-    try {
-      const docRef = await addDoc(collection(db, "iRubric"), {
-        ...newRubric,
-        userId: teacherId,
-        createdAt: serverTimestamp()
-      });
-      console.log("Rubric saved with ID: ", docRef.id);
-      setIsRubricModalOpen(false);
-      fetchRubrics();
-    } catch (error) {
-      console.error("Error saving rubric: ", error);
-      alert('루브릭 저장 중 오류가 발생했습니다.');
+    if (!teacherId) {
+      console.error("User not authenticated");
+      alert('로그인이 필요합니다.');
+      return;
     }
-  };
-
-  const handleUpdateRubric = async (updatedRubric) => {
-    const user = auth.currentUser;
-    const session = studentSession || {};
-    const teacherId = session.teacherId || user?.uid;
-
-    if (!teacherId) return;
 
     try {
-      const rubricRef = doc(db, "iRubric", updatedRubric.id);
-      await updateDoc(rubricRef, {
-        ...updatedRubric,
-        userId: teacherId,
-        updatedAt: serverTimestamp()
-      });
-      console.log("Rubric updated with ID: ", updatedRubric.id);
+      let savedRubric;
+      if (newRubric.id) {
+        // 기존 루브릭 업데이트
+        const rubricRef = doc(db, "iRubric", newRubric.id);
+        await updateDoc(rubricRef, {
+          ...newRubric,
+          updatedAt: serverTimestamp()
+        });
+        savedRubric = { ...newRubric, id: newRubric.id };
+      } else {
+        // 새 루브릭 추가
+        console.log("Adding new rubric");
+        const res = await addDoc(collection(db, "iRubric"), {
+          summary: newRubric.summary,
+          acnum: newRubric.acnum,
+          rubric: newRubric.rubric,
+          high: newRubric.high,
+          mid: newRubric.mid,
+          low: newRubric.low,
+          userId: teacherId,
+          createdAt: serverTimestamp()
+        });
+        savedRubric = { ...newRubric, id: res.id };
+        console.log("New rubric added with ID:", res.id);
+      }
+
       setIsRubricModalOpen(false);
-      fetchRubrics();
+      setSelectedRubric(null);
+
+      // 상태 업데이트
+      setRubrics(prevRubrics => {
+        const updatedRubrics = prevRubrics.filter(r => r.id !== savedRubric.id);
+        return [savedRubric, ...updatedRubrics];
+      });
+
+      // 현재 루브릭 업데이트
+      if (currentRubric && currentRubric.id === savedRubric.id) {
+        setCurrentRubric(savedRubric);
+      }
+
+      setNotificationMessage('루브릭이 성공적으로 저장되었습니다.');
+      setIsNotificationOpen(true);
     } catch (error) {
-      console.error("Error updating rubric: ", error);
-      alert('루브릭 업데이트 중 오류가 발생했습니다.');
+      console.error("Error in handleSaveRubric:", error);
+      if (error.code) {
+        console.error("Firebase error code:", error.code);
+      }
+      alert(`루브릭 저장/업데이트 중 오류가 발생했습니다: ${error.message}`);
     }
   };
 
@@ -417,6 +465,11 @@ function ImageAnalysis() {
         await deleteDoc(doc(db, "iRubric", rubricId));
         console.log("Rubric deleted with ID: ", rubricId);
         setIsRubricModalOpen(false);
+        setNotificationMessage('루브릭이 성공적으로 삭제되었습니다.');
+        setIsNotificationOpen(true);
+        if (currentRubric && currentRubric.id === rubricId) {
+          setCurrentRubric(null);
+        }
         fetchRubrics();
       } catch (error) {
         console.error("Error deleting rubric: ", error);
@@ -433,7 +486,7 @@ function ImageAnalysis() {
   const handleApplyRubric = (rubric) => {
     setCurrentRubric(rubric);
     setIsRubricModalOpen(false);
-    
+
     const rubricPrompt = `평가 주제: ${rubric.summary}
 성취기준: ${rubric.acnum}
 평가 프롬프트: ${rubric.rubric}
@@ -442,7 +495,7 @@ function ImageAnalysis() {
 - 보통: ${rubric.mid}
 - 노력요함: ${rubric.low}
 
-위의 루브릭을 바탕으로 다음 이미지를 분석해주세요:`;
+위의 루브릭을 바탕으로 이미지를 분석해주세요:`;
 
     setPrompt(rubricPrompt);
   };
@@ -476,7 +529,7 @@ function ImageAnalysis() {
                     zoomable={true}
                     ref={cropperRef}
                   />
-                 
+
                   <div className="absolute bottom-4 right-4 flex space-x-2">
                     <button
                       onClick={() => handleZoom(true)}
@@ -521,7 +574,7 @@ function ImageAnalysis() {
                     onBlur={() => setIsFocused(false)}
                     placeholder="이미지에 대해 알고 싶은 내용을 입력하세요."
                   ></textarea>
-              
+
                   <button
                     onClick={analyzeImage}
                     disabled={!prompt || isLoading}
@@ -597,7 +650,14 @@ function ImageAnalysis() {
             <h2 className="text-lg font-semibold text-gray-800">🛠️ 루브릭 설정</h2>
             <button
               onClick={() => {
-                setSelectedRubric(null);
+                setSelectedRubric({
+                  summary: '',
+                  acnum: '',
+                  rubric: '',
+                  high: '',
+                  mid: '',
+                  low: ''
+                });
                 setIsRubricModalOpen(true);
               }}
               className="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 transition duration-300"
@@ -646,14 +706,20 @@ function ImageAnalysis() {
         content={modalContent}
       />
 
+      <NotificationModal 
+        isOpen={isNotificationOpen} 
+        onClose={() => setIsNotificationOpen(false)} 
+        message={notificationMessage} 
+      />
+
       <RubricModal
         isOpen={isRubricModalOpen}
         onClose={() => {
           setIsRubricModalOpen(false);
           setSelectedRubric(null);
         }}
-        onSave={selectedRubric ? handleUpdateRubric : handleSaveRubric}
-        onDelete={selectedRubric ? handleDeleteRubric : null}
+        onSave={handleSaveRubric}
+        onDelete={handleDeleteRubric}
         onApply={handleApplyRubric}
         initialRubric={selectedRubric}
       />

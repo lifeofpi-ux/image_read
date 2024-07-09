@@ -56,6 +56,12 @@ const HomePage = ({
         >
           🏠 이미지 평가 AI
         </button>
+        <button
+          onClick={() => (user || studentSession) ? navigate("/conv-ai") : setIsLoginModalOpen(true)}
+          className="min-w-300 block px-11 py-3 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition duration-300 text-center text-lg font-semibold"
+          >
+          💬 AI 채팅 도우미
+        </button>
 
         {user || studentSession ? (
           <div className="mb-5">

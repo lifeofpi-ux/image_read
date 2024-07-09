@@ -5,6 +5,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import ImageAnalysis from './ImageAnalysis';
 import RubricReportAI from './RubricReportAI';
+import ConvAI from './ConvAI';
 import LoginModal from './LoginModal';
 import SignupModal from './SignupModal';
 import SLoginModal from './SLoginModal';
@@ -218,6 +219,10 @@ function App() {
               <li className="mb-1">
                 <NavigationButton to="/image-analysis" text="🏠 이미지 평가 AI" />
               </li>
+              <li className="mb-1">
+                <NavigationButton to="/conv-ai" text="💬 AI 채팅 도우미" />
+              </li>
+
             </ul>
             <div className="mt-auto text-sm font-bold text-gray-400 ml-4">
               2024. T.R.I.P.O.D.
@@ -253,6 +258,7 @@ function App() {
             <Routes>
               <Route path="/image-analysis" element={(user || studentSession) ? <ImageAnalysis /> : <Navigate to="/" />} />
               <Route path="/rubric-report" element={(user || studentSession) ? <RubricReportAI /> : <Navigate to="/" />} />
+              <Route path="/conv-ai" element={(user || studentSession) ? <ConvAI /> : <Navigate to="/" />} />
               <Route path="/" element={
                 <HomePage 
                   user={user} 
