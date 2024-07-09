@@ -15,7 +15,6 @@ const HomePage = ({
 }) => {
   const navigate = useNavigate();
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
-  const [selectedCard, setSelectedCard] = useState(null);
 
   useEffect(() => {
     if ((user || studentSession) && typeof setShowLoginSuccess === 'function') {
@@ -41,7 +40,6 @@ const HomePage = ({
     if (user || studentSession) {
       navigate(path);
     } else {
-      setSelectedCard(path);
       setIsCardModalOpen(true);
     }
   };
