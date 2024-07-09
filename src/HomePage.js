@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import Cookies from 'js-cookie';
@@ -14,6 +14,8 @@ const HomePage = ({
   setLoginSuccessInfo
 }) => {
   const navigate = useNavigate();
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   useEffect(() => {
     if ((user || studentSession) && typeof setShowLoginSuccess === 'function') {
@@ -35,9 +37,52 @@ const HomePage = ({
     }
   };
 
-  const handleNavigation = (path) => {
-    (user || studentSession) ? navigate(path) : setIsLoginModalOpen(true);
+  const handleCardClick = (path) => {
+    if (user || studentSession) {
+      navigate(path);
+    } else {
+      setSelectedCard(path);
+      setIsCardModalOpen(true);
+    }
   };
+
+  const handleLoginSelection = (isTeacher) => {
+    setIsCardModalOpen(false);
+    if (isTeacher) {
+      setIsLoginModalOpen(true);
+    } else {
+      setIsStudentLoginModalOpen(true);
+    }
+  };
+
+  const CardModal = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-xs w-full">
+        <h2 className="text-xl font-bold mb-3 text-center text-gray-800">🔑로그인</h2>
+        <p className="mb-5 text-center text-sm text-gray-600">계속하려면 로그인 유형을 선택하세요:</p>
+        <div className="flex flex-col space-y-2">
+          <button 
+            onClick={() => handleLoginSelection(true)}
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
+          >
+            👩🏻‍🏫 선생님 로그인
+          </button>
+          <button 
+            onClick={() => handleLoginSelection(false)}
+            className="w-full py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg shadow-md hover:from-pink-600 hover:to-pink-700 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
+          >
+            👩🏻‍💻 학생 로그인
+          </button>
+        </div>
+        <button 
+          onClick={() => setIsCardModalOpen(false)}
+          className="mt-5 w-full py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300 ease-in-out"
+        >
+          닫기
+        </button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col items-center justify-center min-h-custom">
@@ -46,7 +91,7 @@ const HomePage = ({
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl w-300 px-4 mb-20">
         <div 
-          onClick={() => handleNavigation("/rubric-report")}
+          onClick={() => handleCardClick("/rubric-report")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
           <div className="bg-blue-500 p-4">
@@ -59,7 +104,7 @@ const HomePage = ({
         </div>
 
         <div 
-          onClick={() => handleNavigation("/image-analysis")}
+          onClick={() => handleCardClick("/image-analysis")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
           <div className="bg-green-500 p-4">
@@ -72,7 +117,7 @@ const HomePage = ({
         </div>
 
         <div 
-          onClick={() => handleNavigation("/conv-ai")}
+          onClick={() => handleCardClick("/conv-ai")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
           <div className="bg-purple-500 p-4">
@@ -94,22 +139,7 @@ const HomePage = ({
             로그아웃
           </button>
         </div>
-      ) : (
-        <div className="w-[450px] max-w-4xl px-4 flex space-x-4">
-          <button 
-            onClick={() => setIsLoginModalOpen(true)}
-            className="flex-1 px-6 py-2 bg-cyan-500 text-base text-white rounded-lg shadow-lg hover:bg-cyan-600 transition duration-300 text-center font-semibold"
-          >
-            👩🏻‍🏫 선생님
-          </button>
-          <button 
-            onClick={() => setIsStudentLoginModalOpen(true)}
-            className="flex-1 px-6 py-2 bg-amber-500 text-base text-white rounded-lg shadow-lg hover:bg-amber-600 transition duration-300 text-center font-semibold"
-          >
-            👩🏻‍💻 학생
-          </button>
-        </div>
-      )}
+      ) : null}
 
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
         <div className="flex justify-center items-center space-x-6">
@@ -129,6 +159,8 @@ const HomePage = ({
           </button>
         </div>
       </div>
+
+      {isCardModalOpen && <CardModal />}
     </div>
   );
 };
