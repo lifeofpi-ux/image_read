@@ -44,7 +44,7 @@ const HomePage = ({
       <h1 className="text-4xl font-bold mb-1 text-gray-800">T.R.I.P.O.D.</h1>
       <h1 className="text-sm font-bold mb-20 text-gray-400">수업, 평가, 교육 그리고 사람들</h1>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-xl w-300 px-4 mb-20">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl w-300 px-4 mb-20">
         <div 
           onClick={() => handleNavigation("/rubric-report")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
@@ -89,22 +89,22 @@ const HomePage = ({
         <div className="w-200 max-w-xl px-4">
           <button 
             onClick={handleLogout}
-            className="min-w-[200px] text-lg px-6 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition duration-300 text-center font-semibold"
+            className="min-w-[200px] text-base px-6 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition duration-300 text-center font-semibold"
           >
             로그아웃
           </button>
         </div>
       ) : (
-        <div className="w-[400px] max-w-4xl px-4 flex space-x-4">
+        <div className="w-[450px] max-w-4xl px-4 flex space-x-4">
           <button 
             onClick={() => setIsLoginModalOpen(true)}
-            className="flex-1 px-6 py-2 bg-indigo-500 text-white rounded-lg shadow-lg hover:bg-indigo-600 transition duration-300 text-center font-semibold"
+            className="flex-1 px-6 py-2 bg-cyan-500 text-base text-white rounded-lg shadow-lg hover:bg-cyan-600 transition duration-300 text-center font-semibold"
           >
             👩🏻‍🏫 선생님
           </button>
           <button 
             onClick={() => setIsStudentLoginModalOpen(true)}
-            className="flex-1 px-6 py-2 bg-purple-500 text-white rounded-lg shadow-lg hover:bg-purple-600 transition duration-300 text-center font-semibold"
+            className="flex-1 px-6 py-2 bg-amber-500 text-base text-white rounded-lg shadow-lg hover:bg-amber-600 transition duration-300 text-center font-semibold"
           >
             👩🏻‍💻 학생
           </button>
