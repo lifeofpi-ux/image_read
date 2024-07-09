@@ -8,7 +8,7 @@ import './custom.css';
 const API_URL = '/api/conv-ai';
 
 const ChatMessage = ({ message }) => {
-  if (message.role === 'system' || message.role === 'assistant' && message.isInit) return null; // 시스템 메시지와 초기 assistant 메시지는 화면에 노출되지 않도록 처리
+  if (message.role === 'system' || (message.role === 'assistant' && message.isInit)) return null; // 시스템 메시지와 초기 assistant 메시지는 화면에 노출되지 않도록 처리
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
@@ -170,7 +170,6 @@ function ConvAI() {
   const [isFocused, setIsFocused] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRightSideTabOpen, setIsRightSideTabOpen] = useState(false);
-  const [recentPrompts, setRecentPrompts] = useState([]);
   const [prompts, setPrompts] = useState([]);
   const [currentPrompt, setCurrentPrompt] = useState(null);
   const [isPromptModalOpen, setIsPromptModalOpen] = useState(false);
@@ -210,7 +209,6 @@ function ConvAI() {
       const promptList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       console.log("Fetched prompts:", promptList);
       setPrompts(promptList);
-      setRecentPrompts(promptList);
     } catch (error) {
       console.error("Error in fetchPrompts:", error);
       if (error.code) {
