@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signOut } from 'firebase/auth';
-import Cookies from 'js-cookie';
-import { auth } from './firebase';
+
 
 const HomePage = ({ 
   user, 
@@ -22,20 +20,7 @@ const HomePage = ({
     }
   }, [user, studentSession, setShowLoginSuccess]);
 
-  const handleLogout = async () => {
-    try {
-      if (user) {
-        await signOut(auth);
-      } else if (studentSession) {
-        Cookies.remove('studentSession');
-      }
-      navigate('/');
-      window.location.reload();
-    } catch (error) {
-      console.error("로그아웃 중 오류 발생:", error);
-    }
-  };
-
+  
   const handleCardClick = (path) => {
     if (user || studentSession) {
       navigate(path);
@@ -128,16 +113,7 @@ const HomePage = ({
         </div>
       </div>
 
-      {user || studentSession ? (
-        <div className="w-200 max-w-xl px-4">
-          <button 
-            onClick={handleLogout}
-            className="min-w-[200px] text-base px-6 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 transition duration-300 text-center font-semibold"
-          >
-            로그아웃
-          </button>
-        </div>
-      ) : null}
+      
 
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
         <div className="flex justify-center items-center space-x-6">

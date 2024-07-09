@@ -33,10 +33,38 @@ const ChatMessage = ({ message, isFirstMessage }) => {
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
       <div style={{ whiteSpace: 'break-spaces' }} className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-        message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+        message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-blue-100 text-gray-800'
       }`}>
         {displayedContent}
       </div>
+    </div>
+  );
+};
+
+const MiniPopup = ({ isVisible, onClose }) => {
+  if (!isVisible) return null;
+
+  return (
+    <div 
+      className="px-2 top-10 right-40 mt-2 mr-2 bg-black text-white text-sm rounded p-2 z-10 shadow-lg"
+      style={{ 
+        position: 'fixed', 
+        top: '10px', 
+        right: '50px',
+        animation: 'blink 2s linear infinite'
+      }}
+    >
+      <style jsx>{`
+        @keyframes blink {
+          0% { opacity: 1; }
+          50% { opacity: 0.5; }
+          100% { opacity: 1; }
+        }
+      `}</style>
+      <span>❤️ 프롬프트 설정</span>
+      <button onClick={onClose} className="ml-2 text-gray-400 hover:text-gray-200 ">
+        &times;
+      </button>
     </div>
   );
 };
@@ -183,6 +211,7 @@ function ConvAI() {
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
+  const [isPopupVisible, setIsPopupVisible] = useState(true);
   const chatContainerRef = useRef(null);
   const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
@@ -456,15 +485,15 @@ function ConvAI() {
           <div className="max-w-6xl mx-auto">
             <div className="w-[760px] px-4">
               <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ AI 채팅 도우미</h1>
-              <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4 기반</div>
+              <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4o 기반</div>
               {currentPrompt && (
-                <div className="mb-4 text-left text-sm text-gray-600">
+                <div className="mb-4 text-left text-base text-gray-600">
                   ✨ 현재 챗봇 모드 : <strong>{currentPrompt.title}</strong>
                 </div>
               )}
               <div 
                 ref={chatContainerRef}
-                className="mb-4 h-[280px] bg-gray-100 p-4 rounded-lg overflow-y-scroll flex flex-col-reverse"
+                className="mb-4 h-[280px] bg-gray-100 p-4 rounded-lg overflow-y-scroll flex flex-col-reverse relative"
               >
                 <div className="flex flex-col">
                   {messages.map((message, index) => (
@@ -475,6 +504,7 @@ function ConvAI() {
                     />
                   ))}
                 </div>
+                {isLoading && <div className="blinking-dot"></div>}
               </div>
               <div className="mb-8 relative">
                 <textarea
@@ -499,7 +529,7 @@ function ConvAI() {
                 <button
                   onClick={sendMessage}
                   disabled={!input.trim() || isLoading}
-                  className={`absolute right-3 bottom-4 w-8 h-8 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${
+                  className={`absolute right-3 bottom-5 w-8 h-8 flex items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-300 ease-in-out ${
                     (!input.trim() || isLoading) ? 'bg-gray-300 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
                   }`}
                 >
@@ -593,6 +623,21 @@ function ConvAI() {
         </svg>
       </button>
 
+      {/* Right side tab toggle button and MiniPopup */}
+      <MiniPopup 
+        isVisible={isPopupVisible}
+        onClose={() => setIsPopupVisible(false)}
+      />
+      <button
+        onClick={() => setIsRightSideTabOpen(!isRightSideTabOpen)}
+        className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
+      >
+        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
       <PromptModal
         isOpen={isPromptModalOpen}
         onClose={() => {
@@ -615,3 +660,4 @@ function ConvAI() {
 }
 
 export default ConvAI;
+
