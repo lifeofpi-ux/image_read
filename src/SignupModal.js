@@ -121,7 +121,7 @@ function SignupModal({ onClose, onLoginClick }) {
       await setDoc(doc(db, "users", user.uid), {
         userId: user.uid,
         email: email,
-        openaiKey: openaiKey,
+        openaiKey: openaiKey || '', // API 키가 비어있어도 저장
         nickname: nickname,
         classCode: classCode,
         deploymentCode: deploymentCode
@@ -219,14 +219,13 @@ function SignupModal({ onClose, onLoginClick }) {
             />
           </div>
           <div>
-            <label htmlFor="openaiKey" className="block text-sm font-medium text-gray-700">OpenAI API 키</label>
+            <label htmlFor="openaiKey" className="block text-sm font-medium text-gray-700">OpenAI API 키 (선택사항)</label>
             <input
               type="password"
               id="openaiKey"
               value={openaiKey}
               onChange={(e) => setOpenaiKey(e.target.value)}
               className="bg-gray-50 p-2 mt-1 mb-4 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-              required
             />
           </div>
           {error && <p className="text-red-500 text-sm">{error}</p>}

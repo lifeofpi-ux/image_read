@@ -113,9 +113,13 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
       await updateProfile(auth.currentUser, { displayName: formData.nickname });
 
       // Update user data in Firestore
-      await updateDoc(doc(db, "users", user.uid), formData);
+      const updatedData = {
+        ...formData,
+        openaiKey: formData.openaiKey || '' // API 키가 비어있어도 저장
+      };
+      await updateDoc(doc(db, "users", user.uid), updatedData);
 
-      const updatedUser = { ...user, ...formData };
+      const updatedUser = { ...user, ...updatedData };
       onUpdate(updatedUser);
       onClose();
     } catch (error) {
@@ -225,7 +229,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
             />
           </div>
           <div>
-            <label htmlFor="openaiKey" className="block text-sm font-medium text-gray-700">OpenAI API 키</label>
+            <label htmlFor="openaiKey" className="block text-sm font-medium text-gray-700">OpenAI API 키 (선택사항)</label>
             <input
               type="text"
               id="openaiKey"
@@ -233,7 +237,6 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
               value={formData.openaiKey}
               onChange={handleInputChange}
               className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-              required
               autoComplete="off"
             />
           </div>

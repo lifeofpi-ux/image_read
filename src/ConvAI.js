@@ -4,30 +4,43 @@ import { auth, db } from './firebase';
 import Cookies from 'js-cookie';
 import './App.css';
 import './custom.css';
+import PromptButton from './PromptButton';
+import NotificationModal from './NotificationModal';
 
 const API_URL = '/api/conv-ai';
 
-const ChatMessage = ({ message }) => {
-  if (message.role === 'system' || (message.role === 'assistant' && message.isInit)) return null; // 시스템 메시지와 초기 assistant 메시지는 화면에 노출되지 않도록 처리
+const ChatMessage = ({ message, isFirstMessage }) => {
+  const [displayedContent, setDisplayedContent] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (message.role === 'assistant') {
+      let index = 0;
+      const intervalId = setInterval(() => {
+        setDisplayedContent(message.content.slice(0, index));
+        index++;
+        if (index > message.content.length) {
+          clearInterval(intervalId);
+          setIsComplete(true);
+        }
+      }, 20);
+      return () => clearInterval(intervalId);
+    } else {
+      setDisplayedContent(message.content);
+      setIsComplete(true);
+    }
+  }, [message]);
+
+  if (message.role === 'system') return null;
+
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
-        {message.content}
+      <div style={{ whiteSpace: 'break-spaces'}} className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+        message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'
+      }`}>
+        {displayedContent}
       </div>
     </div>
-  );
-};
-
-const PromptButton = ({ prompt, onClick }) => {
-  if (!prompt) return null;
-
-  return (
-    <button
-      onClick={() => onClick(prompt)}
-      className="bg-gradient-to-r from-blue-400 to-indigo-500 text-white rounded-lg px-6 py-3 hover:from-blue-500 hover:to-indigo-600 transition duration-300 text-left overflow-hidden text-ellipsis whitespace-nowrap w-full shadow-md"
-    >
-      {prompt.title.length > 50 ? prompt.title.substring(0, 50) + '...' : prompt.title}
-    </button>
   );
 };
 
@@ -35,7 +48,8 @@ const PromptModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialPrompt
   const [prompt, setPrompt] = useState(initialPrompt || {
     title: '',
     baseRole: '',
-    aiPrompt: ''
+    aiPrompt: '',
+    greeting: ''
   });
 
   useEffect(() => {
@@ -45,7 +59,8 @@ const PromptModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialPrompt
       setPrompt({
         title: '',
         baseRole: '',
-        aiPrompt: ''
+        aiPrompt: '',
+        greeting: ''
       });
     }
   }, [initialPrompt]);
@@ -89,6 +104,19 @@ const PromptModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialPrompt
               onChange={handleChange}
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               rows="4"
+            ></textarea>
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-base font-bold mb-2" htmlFor="greeting">
+              첫인사말
+            </label>
+            <textarea
+              id="greeting"
+              name="greeting"
+              value={prompt.greeting}
+              onChange={handleChange}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              rows="2"
             ></textarea>
           </div>
           <div className="mb-4">
@@ -145,25 +173,6 @@ const PromptModal = ({ isOpen, onClose, onSave, onDelete, onApply, initialPrompt
   );
 };
 
-const NotificationModal = ({ isOpen, message, onClose }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-80 w-full shadow-lg">
-        <h2 className="text-xl font-bold mb-4">알림</h2>
-        <p>{message}</p>
-        <button
-          onClick={onClose}
-          className="mt-4 w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
-        >
-          닫기
-        </button>
-      </div>
-    </div>
-  );
-};
-
 function ConvAI() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -176,17 +185,13 @@ function ConvAI() {
   const [selectedPrompt, setSelectedPrompt] = useState(null);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
-  const messagesEndRef = useRef(null);
+  const [isFirstMessage, setIsFirstMessage] = useState(true);
+  const chatContainerRef = useRef(null);
   const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
     return sessionData ? JSON.parse(sessionData) : null;
   });
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(scrollToBottom, [messages]);
 
   const fetchPrompts = useCallback(async () => {
     const user = auth.currentUser;
@@ -233,6 +238,11 @@ function ConvAI() {
       if (docSnapshot.exists()) {
         const defaultPrompt = docSnapshot.data();
         setCurrentPrompt(defaultPrompt);
+        // Display greeting message
+        if (defaultPrompt.greeting) {
+          setMessages([{ role: 'assistant', content: defaultPrompt.greeting }]);
+          setIsFirstMessage(true);
+        }
       } else {
         console.log("No default prompt found for user:", teacherId);
       }
@@ -251,7 +261,12 @@ function ConvAI() {
     if (!input.trim()) return;
   
     const userMessage = { role: 'user', content: input };
-    const historyWithPrompt = [...messages];
+    setMessages(prevMessages => [...prevMessages, userMessage]);
+    setInput('');
+    setIsLoading(true);
+    setIsFirstMessage(false);
+  
+    const historyWithPrompt = [...messages, userMessage];
   
     if (!historyWithPrompt.find((message) => message.role === 'system') && currentPrompt) {
       const systemMessage = {
@@ -261,16 +276,10 @@ function ConvAI() {
       const assistantMessage = {
         role: 'assistant',
         content: currentPrompt.aiPrompt,
-        isInit: true // 추가된 부분
       };
       historyWithPrompt.unshift(systemMessage);
       historyWithPrompt.push(assistantMessage);
     }
-  
-    historyWithPrompt.push(userMessage);
-    setMessages(historyWithPrompt);
-    setInput('');
-    setIsLoading(true);
   
     const user = auth.currentUser;
     const session = studentSession || {};
@@ -318,10 +327,10 @@ function ConvAI() {
       }
   
       const aiMessage = { role: 'assistant', content: data.result };
-      setMessages((prevMessages) => [...prevMessages, aiMessage]);
+      setMessages(prevMessages => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error('Error in sendMessage:', error);
-      setMessages((prevMessages) => [...prevMessages, { role: 'assistant', content: `오류가 발생했습니다: ${error.message}` }]);
+      setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: `오류가 발생했습니다: ${error.message}` }]);
     } finally {
       setIsLoading(false);
     }
@@ -424,9 +433,22 @@ function ConvAI() {
       setCurrentPrompt(prompt);
       setIsPromptModalOpen(false);
       setMessages([]);
+      
+      // Display greeting message
+      if (prompt.greeting) {
+        setMessages([{ role: 'assistant', content: prompt.greeting }]);
+        setIsFirstMessage(true);
+      }
     } catch (error) {
       console.error("Error in handleApplyPrompt:", error);
       alert(`기본 프롬프트 설정 중 오류가 발생했습니다: ${error.message}`);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -440,14 +462,22 @@ function ConvAI() {
               <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4 기반</div>
               {currentPrompt && (
                 <div className="mb-4 text-left text-sm text-gray-600">
-                  ✨ 현재 챗봇 모드  <strong>{currentPrompt.title}</strong>
+                  ✨ 현재 챗봇 모드 : <strong>{currentPrompt.title}</strong>
                 </div>
               )}
-              <div className="mb-4 h-[280px] overflow-y-auto bg-gray-100 p-4 rounded-lg">
-                {messages.map((message, index) => (
-                  <ChatMessage key={index} message={message} />
-                ))}
-                <div ref={messagesEndRef} />
+              <div 
+                ref={chatContainerRef}
+                className="mb-4 h-[280px] bg-gray-100 p-4 rounded-lg overflow-y-scroll flex flex-col-reverse"
+              >
+                <div className="flex flex-col">
+                  {messages.map((message, index) => (
+                    <ChatMessage 
+                      key={index} 
+                      message={message} 
+                      isFirstMessage={index === 0 && isFirstMessage}
+                    />
+                  ))}
+                </div>
               </div>
               <div className="mb-8 relative">
                 <textarea
@@ -466,6 +496,7 @@ function ConvAI() {
                   onChange={(e) => setInput(e.target.value)}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
+                  onKeyPress={handleKeyPress}
                   placeholder="AI에게 메시지를 입력하세요..."
                 />
                 <button
@@ -490,7 +521,7 @@ function ConvAI() {
 
               <div className="w-full flex mt-8">
                 <div className="w-full">
-                  <h3 className="text-base font-semibold mb-4">📑 현재 챗봇 모드</h3>
+                  <h3 className="text-base font-semibold mb-4">🍀 챗봇 프롬프트 보기</h3>
                   <div className="flex flex-col space-y-3">
                     {currentPrompt && (
                       <PromptButton key={currentPrompt.id} prompt={currentPrompt} onClick={() => handleEditPrompt(currentPrompt)} />
@@ -524,7 +555,8 @@ function ConvAI() {
                 setSelectedPrompt({
                   title: '',
                   baseRole: '',
-                  aiPrompt: ''
+                  aiPrompt: '',
+                  greeting: ''
                 });
                 setIsPromptModalOpen(true);
               }}
