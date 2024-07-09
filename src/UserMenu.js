@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaUser } from 'react-icons/fa';
+import LoginSuccessModal from './LoginSuccessModal';
 
 const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -22,11 +24,31 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
     };
   }, []);
 
+  useEffect(() => {
+    if (showLogoutModal) {
+      const timer = setTimeout(() => {
+        setShowLogoutModal(false);
+      }, 3000);  // 3초 후 자동으로 모달 닫기
+
+      return () => clearTimeout(timer);
+    }
+  }, [showLogoutModal]);
+
+  const handleLogout = async () => {
+    await onLogout();
+    setIsOpen(false);
+    setShowLogoutModal(true);
+  };
+
   const displayName = user 
     ? `${user.nickname || user.displayName || '알 수 없음'} 선생님` 
     : studentSession
     ? `${studentSession.teacherNickname || '알 수 없음'} 선생님 학생`
     : '알 수 없음';
+
+  const userType = user ? 'teacher' : 'student';
+  const nickname = user ? (user.nickname || user.displayName || '알 수 없음') : 
+                   (studentSession ? studentSession.teacherNickname : '알 수 없음');
 
   return (
     <div className="relative" ref={menuRef}>
@@ -51,15 +73,19 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
             </button>
           )}
           <button
-            onClick={() => {
-              onLogout();
-              setIsOpen(false);
-            }}
+            onClick={handleLogout}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
           >
             로그아웃
           </button>
         </div>
+      )}
+      {showLogoutModal && (
+        <LoginSuccessModal 
+          onClose={() => setShowLogoutModal(false)}
+          userType={userType}
+          nickname={nickname}
+        />
       )}
     </div>
   );

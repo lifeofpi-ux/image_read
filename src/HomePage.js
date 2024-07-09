@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-
 const HomePage = ({ 
   user, 
   studentSession,
@@ -9,10 +8,12 @@ const HomePage = ({
   setIsModalOpen, 
   setIsStudentLoginModalOpen,
   setShowLoginSuccess,
-  setLoginSuccessInfo
+  setLoginSuccessInfo,
+  setRedirectPath
 }) => {
   const navigate = useNavigate();
-  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
+  const [isLoginConfirmModalOpen, setIsLoginConfirmModalOpen] = useState(false);
+  const [selectedPath, setSelectedPath] = useState('');
 
   useEffect(() => {
     if ((user || studentSession) && typeof setShowLoginSuccess === 'function') {
@@ -20,29 +21,38 @@ const HomePage = ({
     }
   }, [user, studentSession, setShowLoginSuccess]);
 
-  
+  useEffect(() => {
+    if ((user || studentSession) && selectedPath) {
+      navigate(selectedPath);
+      setSelectedPath('');
+    }
+  }, [user, studentSession, selectedPath, navigate]);
+
   const handleCardClick = (path) => {
     if (user || studentSession) {
       navigate(path);
     } else {
-      setIsCardModalOpen(true);
+      setSelectedPath(path);
+      setIsLoginConfirmModalOpen(true);
     }
   };
 
   const handleLoginSelection = (isTeacher) => {
-    setIsCardModalOpen(false);
+    setIsLoginConfirmModalOpen(false);
     if (isTeacher) {
       setIsLoginModalOpen(true);
     } else {
       setIsStudentLoginModalOpen(true);
     }
+    setRedirectPath(selectedPath);
+    setLoginSuccessInfo(prev => ({ ...prev, redirectPath: selectedPath }));
   };
 
-  const CardModal = () => (
+  const LoginConfirmModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-xs w-full">
-        <h2 className="text-xl font-bold mb-3 text-center text-gray-800">🔑로그인</h2>
-        <p className="mb-5 text-center text-sm text-gray-600">계속하려면 로그인 유형을 선택하세요:</p>
+        <h2 className="text-xl font-bold mb-3 text-center text-gray-800">로그인 필요</h2>
+        <p className="mb-5 text-center text-sm text-gray-600">로그인 후 이용하실 수 있습니다.</p>
         <div className="flex flex-col space-y-2">
           <button 
             onClick={() => handleLoginSelection(true)}
@@ -58,7 +68,7 @@ const HomePage = ({
           </button>
         </div>
         <button 
-          onClick={() => setIsCardModalOpen(false)}
+          onClick={() => setIsLoginConfirmModalOpen(false)}
           className="mt-5 w-full py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300 ease-in-out"
         >
           닫기
@@ -113,8 +123,6 @@ const HomePage = ({
         </div>
       </div>
 
-      
-
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
         <div className="flex justify-center items-center space-x-6">
           <a 
@@ -134,7 +142,7 @@ const HomePage = ({
         </div>
       </div>
 
-      {isCardModalOpen && <CardModal />}
+      {isLoginConfirmModalOpen && <LoginConfirmModal />}
     </div>
   );
 };

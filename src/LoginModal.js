@@ -3,7 +3,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
 import { useNavigate } from 'react-router-dom';
 
-function LoginModal({ onClose, onSignupClick }) {
+function LoginModal({ onClose, onSignupClick, setIsManualLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
@@ -13,13 +13,11 @@ function LoginModal({ onClose, onSignupClick }) {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
-        // 사용자가 이미 로그인한 상태라면 홈 화면으로 이동
         onClose();
         navigate('/');
       }
     });
 
-    // 컴포넌트가 언마운트될 때 구독 해제
     return () => unsubscribe();
   }, [navigate, onClose]);
 
@@ -30,11 +28,13 @@ function LoginModal({ onClose, onSignupClick }) {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      setIsManualLogin(true); // Set the manual login flag
       onClose();
       navigate('/');
     } catch (error) {
       console.error("Login error:", error);
       setError("로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.");
+      setIsManualLogin(false); // Reset the flag if login fails
     } finally {
       setIsLoading(false);
     }
