@@ -8,7 +8,7 @@ import './custom.css';
 const API_URL = '/api/conv-ai';
 
 const ChatMessage = ({ message }) => {
-  if (message.role === 'system') return null; // 시스템 메시지는 화면에 노출되지 않도록 처리
+  if (message.role === 'system' || message.role === 'assistant' && message.isInit) return null; // 시스템 메시지와 초기 assistant 메시지는 화면에 노출되지 않도록 처리
   return (
     <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}>
@@ -260,15 +260,13 @@ function ConvAI() {
         role: 'system',
         content: currentPrompt.baseRole
       };
-      historyWithPrompt.unshift(systemMessage);
-    }
-  
-    if (!historyWithPrompt.find((message) => message.role === 'assistant') && currentPrompt) {
       const assistantMessage = {
         role: 'assistant',
-        content: currentPrompt.aiPrompt
+        content: currentPrompt.aiPrompt,
+        isInit: true // 추가된 부분
       };
-      historyWithPrompt.unshift(assistantMessage);
+      historyWithPrompt.unshift(systemMessage);
+      historyWithPrompt.push(assistantMessage);
     }
   
     historyWithPrompt.push(userMessage);
