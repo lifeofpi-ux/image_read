@@ -630,17 +630,27 @@ function RubricReportAI() {
           <div className="flex flex-col space-y-3">
           {rubrics.map((rubric) => (
             <button
-              key={rubric.id}
-              onClick={() => handleEditRubric(rubric)}
-              className={`bg-gradient-to-r ${
-                currentRubric && currentRubric.id === rubric.id
-                  ? 'from-green-500 to-teal-600'
-                  : 'from-blue-500 to-purple-500'
-              } text-white rounded-lg px-4 py-3 hover:from-blue-600 hover:to-purple-600 transition duration-300 text-left overflow-hidden shadow-md`}
-            >
-              <p className="text-base text-base text-white-900 truncate mb-1">{rubric.summary}</p>
-              <p className="text-xs text-gray-200">{rubric.rubric}</p>
-            </button>
+            key={rubric.id}
+            onClick={() => handleEditRubric(rubric)}
+            className={`relative bg-gradient-to-r ${
+              currentRubric && currentRubric.id === rubric.id
+                ? 'from-green-500 to-teal-600'
+                : 'from-blue-500 to-purple-500'
+            } text-white rounded-lg px-4 py-3 hover:from-blue-600 hover:to-purple-600 transition duration-300 text-left overflow-hidden shadow-md`}
+          >
+            {currentRubric && currentRubric.id === rubric.id && (
+              <div className="absolute top-6 right-1 transform -translate-x-1/4 -translate-y-4">
+                <div className="bg-white rounded-full p-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="green">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+            <p className="text-base text-base text-white-900 truncate mb-1">{rubric.summary}</p>
+            <p className="text-xs text-gray-200">{rubric.rubric}</p>
+          </button>
+          
             ))}
           </div>
         </div>

@@ -212,12 +212,12 @@ function ConvAI() {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [isPopupVisible, setIsPopupVisible] = useState(true);
+  const [totalTokens, setTotalTokens] = useState(0); // Add state for total tokens
   const chatContainerRef = useRef(null);
   const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
     return sessionData ? JSON.parse(sessionData) : null;
   });
-
 
   const fetchPrompts = useCallback(async () => {
     const user = auth.currentUser;
@@ -281,7 +281,13 @@ function ConvAI() {
   useEffect(() => {
     fetchPrompts();
     fetchDefaultPrompt();
-  }, [fetchPrompts, fetchDefaultPrompt]);
+  }, [fetchDefaultPrompt, fetchPrompts]);
+
+  useEffect(() => {
+    if (currentPrompt) {
+      setTotalTokens(0); // Reset total tokens when the prompt changes
+    }
+  }, [currentPrompt]);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -354,6 +360,7 @@ function ConvAI() {
   
       const aiMessage = { role: 'assistant', content: data.result };
       setMessages(prevMessages => [...prevMessages, aiMessage]);
+      setTotalTokens(data.tokens); // Update the total tokens used
     } catch (error) {
       console.error('Error in sendMessage:', error);
       setMessages(prevMessages => [...prevMessages, { role: 'assistant', content: `오류가 발생했습니다: ${error.message}` }]);
@@ -459,6 +466,7 @@ function ConvAI() {
       setCurrentPrompt(prompt);
       setIsPromptModalOpen(false);
       setMessages([]);
+      setTotalTokens(0); // Reset the total tokens used
       
       // Display greeting message
       if (prompt.greeting) {
@@ -487,8 +495,9 @@ function ConvAI() {
               <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ AI 채팅 도우미</h1>
               <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4o 기반</div>
               {currentPrompt && (
-                <div className="mb-4 text-left text-base text-gray-600">
-                  ✨ 현재 챗봇 모드 : <strong>{currentPrompt.title}</strong>
+                <div className="mb-4 text-left text-base text-gray-600 flex justify-between items-center">
+                  <div>✨ 현재 챗봇 모드 : <strong>{currentPrompt.title}</strong></div>
+                  <div>🏷️사용된 토큰 : <strong>{totalTokens}</strong></div>
                 </div>
               )}
               <div 
@@ -560,7 +569,34 @@ function ConvAI() {
           </div>
         </div>
       </div>
-      
+
+      {/* Right side tab toggle button and MiniPopup */}
+      <MiniPopup 
+        isVisible={isPopupVisible}
+        onClose={() => setIsPopupVisible(false)}
+      />
+      <button
+        onClick={() => setIsRightSideTabOpen(!isRightSideTabOpen)}
+        className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
+      >
+        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
+
+      {/* Right side tab toggle button and MiniPopup */}
+      <button
+        onClick={() => setIsRightSideTabOpen(!isRightSideTabOpen)}
+        className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
+      >
+        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </button>
+
       <div 
         className={`fixed right-0 bg-white shadow-lg transform ${isRightSideTabOpen ? 'translate-x-0' : 'translate-x-full'} transition duration-300 ease-in-out z-50 side-tab`} 
         style={{
@@ -597,46 +633,32 @@ function ConvAI() {
           <div className="flex flex-col space-y-3">
             {prompts.map((prompt) => (
               <button
-                key={prompt.id}
-                onClick={() => handleEditPrompt(prompt)}
-                className={`bg-gradient-to-r ${
-                  currentPrompt && currentPrompt.id === prompt.id
-                    ? 'from-green-500 to-teal-600'
-                    : 'from-blue-500 to-purple-500'
-                } text-white rounded-lg px-4 py-3 hover:from-blue-600 hover:to-purple-600 transition duration-300 text-left overflow-hidden shadow-md`}
-              >
-                <p className="text-base text-base text-white-900 truncate mb-1">{prompt.title}</p>
-                <p className="text-xs text-gray-200">{prompt.aiPrompt}</p>
-              </button>
+              key={prompt.id}
+              onClick={() => handleEditPrompt(prompt)}
+              className={`relative bg-gradient-to-r ${
+                currentPrompt && currentPrompt.id === prompt.id
+                  ? 'from-green-500 to-teal-600'
+                  : 'from-blue-500 to-purple-500'
+              } text-white rounded-lg px-4 py-3 hover:from-blue-600 hover:to-purple-600 transition duration-300 text-left overflow-hidden shadow-md`}
+            >
+              {currentPrompt && currentPrompt.id === prompt.id && (
+                <div className="absolute top-6 right-1 transform -translate-x-1/4 -translate-y-4">
+                  <div className="bg-white rounded-full p-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="green">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                </div>
+              )}
+              <p className="text-base text-white truncate mb-1">{prompt.title}</p>
+              <p className="text-xs text-gray-200" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {prompt.aiPrompt.length > 100 ? prompt.aiPrompt.slice(0, 100) + '...' : prompt.aiPrompt}
+              </p>
+            </button>
             ))}
           </div>
         </div>
       </div>
-
-      <button
-        onClick={() => setIsRightSideTabOpen(!isRightSideTabOpen)}
-        className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
-      >
-        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button>
-
-      {/* Right side tab toggle button and MiniPopup */}
-      <MiniPopup 
-        isVisible={isPopupVisible}
-        onClose={() => setIsPopupVisible(false)}
-      />
-      <button
-        onClick={() => setIsRightSideTabOpen(!isRightSideTabOpen)}
-        className="fixed right-4 top-4 z-50 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-400 transition duration-300 ease-in-out tab-toggle"
-      >
-        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      </button>
 
       <PromptModal
         isOpen={isPromptModalOpen}
@@ -660,4 +682,3 @@ function ConvAI() {
 }
 
 export default ConvAI;
-
