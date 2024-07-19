@@ -66,7 +66,7 @@ exports.handler = async function(event, context) {
       {
         model: 'gpt-4o-mini',
         messages: history,
-        max_tokens: 1000
+        max_tokens: 2000
       },
       {
         headers: {

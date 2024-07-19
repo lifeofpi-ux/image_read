@@ -80,7 +80,7 @@ exports.handler = async function(event, context) {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 1000
+        max_tokens: 2000
       },
       {
         headers: {
