@@ -481,7 +481,7 @@ function RubricReportAI() {
           <div className="max-w-6xl mx-auto">
             <div className="w-[760px] px-4">
               <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ 루브릭 기반 산출물 평가 도구</h1>
-              <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4 Omni</div>
+              <div className="text-sm font-normal text-center mb-10 text-gray-400">Chatgpt-4o-mini 기반</div>
 
               {/* 평가 루브릭 */}
               <div className="mb-8 relative">
