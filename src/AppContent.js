@@ -14,6 +14,7 @@ import LoginSuccessModal from './LoginSuccessModal';
 import UserMenu from './UserMenu';
 import EditProfileModal from './EditProfileModal';
 import Cookies from 'js-cookie';
+import StudentEvaluation from './StudentEvaluation'; // 새로운 컴포넌트 임포트
 
 function AppContent() {
   const [isLeftSideTabOpen, setIsLeftSideTabOpen] = useState(false);
@@ -299,6 +300,9 @@ function AppContent() {
             <li className="mb-1">
               <NavigationButton to="/conv-ai" text="💬 AI 채팅 도우미" />
             </li>
+            <li className="mb-1">
+              <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" /> {/* 새로운 경로 추가 */}
+            </li>
           </ul>
           <div className="mt-auto text-sm font-bold text-gray-400 ml-4">
             2024. T.R.I.P.O.D.
@@ -335,6 +339,7 @@ function AppContent() {
             <Route path="/image-analysis" element={(user || studentSession) ? <ImageAnalysis /> : <Navigate to="/" />} />
             <Route path="/rubric-report" element={(user || studentSession) ? <RubricReportAI /> : <Navigate to="/" />} />
             <Route path="/conv-ai" element={(user || studentSession) ? <ConvAI /> : <Navigate to="/" />} />
+            <Route path="/student-evaluation" element={(user || studentSession) ? <StudentEvaluation /> : <Navigate to="/" />} /> {/* 새로운 경로 추가 */}
             <Route path="/" element={
               <HomePage 
                 user={user} 

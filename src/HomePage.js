@@ -121,6 +121,19 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI와의 대화를 통한 학습 지원 및 질문 해결</p>
           </div>
         </div>
+
+        <div 
+          onClick={() => handleCardClick("/student-evaluation")}
+          className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
+        >
+          <div className="bg-red-500 p-4">
+            <div className="text-white text-2xl mb-2">📊</div>
+          </div>
+          <div className="p-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">학생 성적 평가 도구</h3>
+            <p className="text-sm text-gray-600">AI를 활용한 학생 성적 평가 및 피드백 생성</p>
+          </div>
+        </div>
       </div>
 
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
