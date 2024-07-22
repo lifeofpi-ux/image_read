@@ -1,9 +1,23 @@
 const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
 const multipart = require('parse-multipart-data');
 const axios = require('axios');
+const admin = require('firebase-admin');
+
+// 환경 변수 로드
 require('dotenv').config();
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+// Firebase Admin SDK 초기화
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
+  });
+}
+
+const db = admin.firestore();
 
 async function extractTextFromPDF(pdfBuffer) {
   try {
@@ -23,7 +37,7 @@ async function extractTextFromPDF(pdfBuffer) {
   }
 }
 
-async function extractEvaluationCriteria(text) {
+async function extractEvaluationCriteria(text, apiKey) {
   try {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -39,12 +53,12 @@ async function extractEvaluationCriteria(text) {
             content: `텍스트에서 영역과 성취기준, 평가요소를 추출하여 JSON 형식으로 반환해주세요. 형식: { "영역": [영역들], "성취기준": [성취기준들], "평가요소": [평가요소들] }. Text: ${text}`
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1000
+        temperature: 0.5,
+        max_tokens: 2000
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         }
       }
@@ -62,7 +76,7 @@ async function extractEvaluationCriteria(text) {
   }
 }
 
-async function extractTotalStudents(text) {
+async function extractTotalStudents(text, apiKey) {
   try {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
@@ -83,7 +97,7 @@ async function extractTotalStudents(text) {
       },
       {
         headers: {
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json'
         }
       }
@@ -102,6 +116,40 @@ async function extractTotalStudents(text) {
   }
 }
 
+async function getApiKey(userId, teacherId) {
+  let openaiApiKey = process.env.OPENAI_API_KEY; // 기본 환경변수에 설정된 키
+
+  if (teacherId) {
+    const teacherDocRef = db.collection('users').doc(teacherId.trim());
+    const teacherDoc = await teacherDocRef.get();
+
+    if (teacherDoc.exists) {
+      const teacherData = teacherDoc.data();
+      if (teacherData.openaiKey) {
+        openaiApiKey = teacherData.openaiKey;
+      }
+    } else {
+      throw new Error('Teacher not found');
+    }
+  } else if (userId) {
+    const userDocRef = db.collection('users').doc(userId.trim());
+    const userDoc = await userDocRef.get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      if (userData.openaiKey) {
+        openaiApiKey = userData.openaiKey;
+      }
+    }
+  }
+
+  if (!openaiApiKey) {
+    throw new Error('API key not found');
+  }
+
+  return openaiApiKey;
+}
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -115,12 +163,17 @@ exports.handler = async function (event, context) {
       const boundary = multipart.getBoundary(contentType);
       const parts = multipart.parse(Buffer.from(event.body, 'base64'), boundary);
       let pdfBuffer;
+      let userId;
+      let teacherId;
 
       for (const part of parts) {
-        if (part.filename && part.filename.endsWith('.pdf')) {
+        if (part.name === 'userId') {
+          userId = part.data.toString();
+        } else if (part.name === 'teacherId') {
+          teacherId = part.data.toString();
+        } else if (part.filename && part.filename.endsWith('.pdf')) {
           pdfBuffer = part.data;
           console.log('PDF file received');
-          break;
         }
       }
 
@@ -132,11 +185,21 @@ exports.handler = async function (event, context) {
         };
       }
 
+      if (!userId && !teacherId) {
+        console.log('User ID or Teacher ID not found in request');
+        return {
+          statusCode: 400,
+          body: JSON.stringify({ error: 'User ID 또는 Teacher ID가 제공되지 않았습니다.' }),
+        };
+      }
+
+      const openaiApiKey = await getApiKey(userId, teacherId);
+
       const fullText = await extractTextFromPDF(pdfBuffer);
       console.log('Extracted text length:', fullText.length);
       
-      const evaluationCriteria = await extractEvaluationCriteria(fullText);
-      const totalStudents = await extractTotalStudents(fullText);
+      const evaluationCriteria = await extractEvaluationCriteria(fullText, openaiApiKey);
+      const totalStudents = await extractTotalStudents(fullText, openaiApiKey);
       console.log('Extracted evaluation criteria:', evaluationCriteria);
       console.log('Total students:', totalStudents);
 

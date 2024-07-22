@@ -1,9 +1,12 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import './App.css';
 import './custom.css';
 import Modal from 'react-modal';
 import { FaCopy, FaDownload } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
+import { auth, db } from './firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import Cookies from 'js-cookie';
 
 const EVALUATION_CRITERIA_API_URL = '/.netlify/functions/extract-pdf-data';
 const EVALUATE_STUDENT_API_URL = '/.netlify/functions/evaluate-student';
@@ -13,24 +16,17 @@ const EvaluationCriteria = ({ criteria }) => {
 
   return (
     <div className="w-full mt-4 p-4 bg-yellow-100 rounded-lg">
-      <h2 className="text-xl font-semibold mb-2">평가 기준</h2>
+      <h2 className="text-xl font-semibold mb-2">🧿 평가 기준</h2>
       {criteria.영역.map((area, index) => (
         <div key={index} className="mb-2">
-          <p><strong>영역:</strong> {area}</p>
-          <p><strong>성취기준:</strong> {criteria.성취기준[index]}</p>
-          <p><strong>평가요소:</strong> {criteria.평가요소[index]}</p>
+          <p className="ml-3"><strong>영역:</strong> {area}</p>
+          <p className="ml-3"><strong>성취기준:</strong> {criteria.성취기준[index]}</p>
+          <p className="ml-3"><strong>평가요소:</strong> {criteria.평가요소[index]}</p>
         </div>
       ))}
     </div>
   );
 };
-
-const TotalStudents = ({ total }) => (
-  <div className="mt-4 p-4 bg-blue-100 rounded-lg">
-    <h2 className="text-xl font-semibold mb-2">총 학생 수</h2>
-    <p>{total || '데이터 없음'}</p>
-  </div>
-);
 
 const StudentEvaluation = ({ evaluations }) => {
   const copyToClipboard = (text) => {
@@ -53,19 +49,19 @@ const StudentEvaluation = ({ evaluations }) => {
   };
 
   return (
-    <div className="mt-4 p-4 bg-green-100 rounded-lg max-w-7xl">
+    <div className="mt-8 rounded-lg max-w-7xl font-sans">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">학생 평가 결과</h2>
-        <button onClick={downloadExcel} className="text-blue-500 hover:text-blue-700">
-          <FaDownload size={20} />
+        <button onClick={downloadExcel} className="text-gray-500 hover:text-gray-700">
+          <FaDownload size={15} />
         </button>
       </div>
       {evaluations.map((evaluation, index) => (
-        <div key={index} className="bg-white p-4 rounded-lg shadow-md mb-4">
+        <div key={index} className="bg-gray-100 p-4 rounded-lg shadow-md mb-4">
           <div className="flex justify-between items-center mb-2">
             <span className="font-semibold">{evaluation.학생데이터.번호}번 {evaluation.학생데이터.이름}</span>
-            <button onClick={() => copyToClipboard(evaluation.평가결과)} className="text-gray-500 hover:text-gray-700">
-              <FaCopy size={16} />
+            <button onClick={() => copyToClipboard(evaluation.평가결과)} className="text-gray-400 hover:text-gray-500">
+              <FaCopy size={12} />
             </button>
           </div>
           <p className="text-gray-700">{evaluation.평가결과}</p>
@@ -75,12 +71,18 @@ const StudentEvaluation = ({ evaluations }) => {
   );
 };
 
-const ProgressBar = ({ progress }) => (
-  <div className="w-full bg-gray-200 rounded-full h-2.5">
-    <div
-      className="bg-blue-600 h-2.5 rounded-full"
-      style={{ width: `${progress}%` }}
-    />
+const ProgressBar = ({ progress, total }) => (
+  <div className="w-full mt-4">
+    <div className="flex justify-between items-center mb-1">
+      <span className="text-sm font-medium text-gray-700">진행률</span>
+      <span className="text-sm font-medium text-gray-700">{total}</span>
+    </div>
+    <div className="w-full bg-gray-200 rounded-full h-3 relative">
+      <div
+        className="bg-green-400 h-3 rounded-full"
+        style={{ width: `${progress}%` }}
+      />
+    </div>
   </div>
 );
 
@@ -93,15 +95,15 @@ const ToneSelector = ({ selectedTone, onToneChange }) => (
           selectedTone === tone
             ? 'bg-green-500 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        } flex items-center justify-center w-40 h-10`}
+        } flex items-center justify-center font-bold w-40 h-10`}
         onClick={() => onToneChange(tone)}
       >
-        {tone === 'niceRecord' ? '나이스 기록용' : '성장 피드백용'}
         {selectedTone === tone && (
-          <svg className="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         )}
+        {tone === 'niceRecord' ? '나이스 기록용' : '성장 피드백용'}
       </button>
     ))}
   </div>
@@ -119,7 +121,41 @@ function StudentEvaluationTool() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [progress, setProgress] = useState(0);
   const [selectedTone, setSelectedTone] = useState('niceRecord');
+  const [stopModalIsOpen, setStopModalIsOpen] = useState(false);
   const abortControllerRef = useRef(null);
+  const [user, setUser] = useState(null);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [studentSession, setStudentSession] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        setUser(user);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setIsTeacher(userData.role === 'teacher');
+        }
+        setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsTeacher(false);
+        
+        // 학생 세션 확인
+        const sessionData = Cookies.get('studentSession');
+        if (sessionData) {
+          const parsedSessionData = JSON.parse(sessionData);
+          setStudentSession(parsedSessionData);
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleFileChange = useCallback((e) => {
     const file = e.target.files[0];
@@ -138,12 +174,28 @@ function StudentEvaluationTool() {
       return;
     }
 
+    if (!user && !studentSession) {
+      setError('로그인이 필요합니다.');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
+    setStudentEvaluations([]);
+    setProgress(0);
 
     try {
       const formData = new FormData();
       formData.append('file', pdfFile);
+      if (user) {
+        formData.append('userId', user.uid);
+        if (isTeacher) {
+          formData.append('teacherId', user.uid);
+        }
+      } else if (studentSession) {
+        formData.append('userId', studentSession.studentId);
+        formData.append('teacherId', studentSession.teacherId);
+      }
 
       const response = await fetch(EVALUATION_CRITERIA_API_URL, {
         method: 'POST',
@@ -167,45 +219,55 @@ function StudentEvaluationTool() {
     } finally {
       setIsLoading(false);
     }
-  }, [pdfFile]);
+  }, [pdfFile, user, isTeacher, studentSession]);
 
   const evaluateAllStudents = useCallback(async () => {
     if (!evaluationCriteria || totalStudents === 0) {
       setError('평가 기준과 학생 수를 먼저 추출해주세요.');
       return;
     }
-
+  
+    if (!isAuthenticated) {
+      setError('로그인이 필요합니다.');
+      return;
+    }
+  
     setIsEvaluating(true);
     setIsLoading(true);
     setError(null);
     setStudentEvaluations([]);
-
+    setProgress(0);
+  
     abortControllerRef.current = new AbortController();
     const { signal } = abortControllerRef.current;
-
+  
     try {
       for (let i = 1; i <= totalStudents; i++) {
+        const requestData = {
+          evaluationCriteria, 
+          studentIndex: i,
+          fullText,
+          tone: selectedTone,
+        };
+  
+        console.log('Sending request data:', requestData); // 디버깅을 위한 로그
+  
         const response = await fetch(EVALUATE_STUDENT_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            evaluationCriteria, 
-            studentIndex: i,
-            fullText,
-            tone: selectedTone
-          }),
+          body: JSON.stringify(requestData),
           signal,
         });
-
+  
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(`서버 오류: ${errorData.error || response.statusText}`);
         }
-
+  
         const data = await response.json();
         setStudentEvaluations(prev => [...prev, data]);
         setProgress(Math.round((i / totalStudents) * 100));
-
+  
         if (signal.aborted) {
           throw new Error('평가가 취소되었습니다.');
         }
@@ -217,14 +279,12 @@ function StudentEvaluationTool() {
       } else {
         setError(`학생 평가 중 오류가 발생했습니다: ${error.message}`);
       }
+    } finally {
       setIsEvaluating(false);
       setIsLoading(false);
-      return;
     }
-
-    setIsEvaluating(false);
-    setIsLoading(false);
-  }, [evaluationCriteria, totalStudents, fullText, selectedTone]);
+  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated]);
+  
 
   const stopEvaluation = () => {
     if (abortControllerRef.current) {
@@ -232,6 +292,7 @@ function StudentEvaluationTool() {
     }
     setIsEvaluating(false);
     setIsLoading(false);
+    setStopModalIsOpen(true);
   };
 
   const customModalStyles = {
@@ -242,7 +303,7 @@ function StudentEvaluationTool() {
       bottom: 'auto',
       marginRight: '-50%',
       transform: 'translate(-50%, -50%)',
-      padding: '0',
+      padding: '30px 20px',
       border: 'none',
       borderRadius: '0.5rem',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
@@ -251,6 +312,7 @@ function StudentEvaluationTool() {
     },
     overlay: {
       backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      zIndex: '3',
     },
   };
 
@@ -262,96 +324,119 @@ function StudentEvaluationTool() {
             <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">학생 성적 평가 도구</h1>
             <div className="text-sm font-normal text-center mb-10 text-gray-400">PDF 기반 성적 분석</div>
 
-            <div className="mb-8">
-              <label className="m-auto w-[300px] flex flex-col items-center px-4 py-6 bg-gray-50 text-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-gray-700 transition duration-300 ease-in-out border-2 border-dashed border-[#d1d1d1]">
-                <svg className="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                  <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04-.74-.12-1.1zM11 11h3l-4 4h3v3h2v-3z" />
-                </svg>
-                <span className="mt-2 text-base leading-normal">PDF 파일 선택</span>
-                <input type='file' className="hidden" onChange={handleFileChange} accept=".pdf" />
-              </label>
-              {pdfFile && <p className="mt-2 text-center text-sm text-gray-600">{pdfFile.name}</p>}
-            </div>
+            {isAuthenticated ? (
+              <>
+                <div className="mb-8">
+                  <label className="m-auto w-[300px] flex flex-col items-center px-4 py-6 bg-gray-50 text-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-gray-700 transition duration-300 ease-in-out border-2 border-dashed border-[#d1d1d1]">
+                    <svg className="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                      <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04-.74-.12-1.1zM11 11h3l-4 4h3v3h2v-3z" />
+                    </svg>
+                    <span className="mt-2 text-base leading-normal">PDF 파일 선택</span>
+                    <input type='file' className="hidden" onChange={handleFileChange} accept=".pdf" />
+                  </label>
+                  {pdfFile && <p className="mt-2 text-center text-sm text-gray-600">{pdfFile.name}</p>}
+                </div>
 
-            <div className="flex justify-center items-center space-x-4 mb-8">
-              <ToneSelector selectedTone={selectedTone} onToneChange={setSelectedTone} />
-              <button
-                onClick={handlePdfParsing}
-                disabled={isLoading || !pdfFile}
-                className={`px-4 py-2 rounded-full transition-colors duration-300 ease-in-out ${
-                  isLoading || !pdfFile
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                } w-40 h-10 flex items-center justify-center`}
-              >
-                {isLoading ? '처리 중...' : '평가하기'}
-              </button>
-            </div>
+                <div className="flex justify-center items-center space-x-4 mb-8">
+                  <ToneSelector selectedTone={selectedTone} onToneChange={setSelectedTone} />
+                  <button
+                    onClick={handlePdfParsing}
+                    disabled={isLoading || !pdfFile}
+                    className={`px-4 py-2 rounded-full transition-colors duration-300 ease-in-out ${
+                      isLoading || !pdfFile
+                        ? 'bg-gray-300 text-gray-500 font-bold cursor-not-allowed'
+                        : 'bg-blue-500 text-white font-bold hover:bg-blue-600'
+                    } w-40 h-10 flex items-center font-bold justify-center`}
+                  >
+                    {isLoading ? '분석 중...' : '평가하기'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center">
+                <p className="text-red-500">로그인이 필요합니다.</p>
+                {/* 로그인 버튼 또는 로그인 페이지로의 링크를 여기에 추가 */}
+              </div>
+            )}
 
             {error && (
-              <div className="mt-4 font-medium text-red-400 text-center">
+              <div className="mt-4 text-sm text-red-400 text-center font-bold">
                 {error}
               </div>
             )}
 
             {evaluationCriteria && <EvaluationCriteria criteria={evaluationCriteria} />}
-            {totalStudents > 0 && <TotalStudents total={totalStudents} />}
             {isEvaluating && (
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">평가 진행 상황</h3>
-                <ProgressBar progress={progress} />
-                <p className="mt-2 text-center">{progress}% 완료</p>
+              <div className="mt-8 rounded-lg relative">
+                <ProgressBar progress={progress} total={`${studentEvaluations.length}/${totalStudents}`} />
               </div>
             )}
 
-                
-  {studentEvaluations.length > 0 && <StudentEvaluation evaluations={studentEvaluations} />}
+            {studentEvaluations.length > 0 && <StudentEvaluation evaluations={studentEvaluations} />}
 
-    <Modal
-      isOpen={modalIsOpen}
-      onRequestClose={() => setModalIsOpen(false)}
-      style={customModalStyles}
-      contentLabel="학생 평가 확인"
-      ariaHideApp={false}
-    >
-      <div className="p-6">
-        <h2 className="text-xl font-semibold mb-4">학생 평가를 진행하시겠습니까?</h2>
-        <div className="flex justify-end space-x-4">
-          <button
-            onClick={() => setModalIsOpen(false)}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition duration-300"
-          >
-            아니오
-          </button>
-          <button
-            onClick={() => {
-              setModalIsOpen(false);
-              evaluateAllStudents();
-            }}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300"
-          >
-            예
-          </button>
+            <Modal
+              isOpen={modalIsOpen}
+              onRequestClose={() => setModalIsOpen(false)}
+              style={customModalStyles}
+              contentLabel="학생 평가 확인"
+              ariaHideApp={false}
+            >
+              <div className="flex flex-col items-center font-sans">
+                <h2 className="text-xl font-bold mt-4 mb-6 text-center">✨ 피드백 생성을 진행하시겠습니까?</h2>
+                <div className="flex justify-center space-x-4">
+                  <button
+                    onClick={() => setModalIsOpen(false)}
+                    className="px-4 py-2 font-semibold bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition duration-300 w-24 mb-4"
+                  >
+                    취소
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalIsOpen(false);
+                      evaluateAllStudents();
+                    }}
+                    className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mb-4"
+                  >
+                    확인
+                  </button>
+                </div>
+              </div>
+            </Modal>
+
+            {isEvaluating && (
+              <button
+                onClick={stopEvaluation}
+                className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300 mt-4"
+              >
+                <div className="flex justify-center items-center space-x-2">
+                  <span>평가 중지</span>
+                  <div className="spinner"></div>
+                </div>
+              </button>
+            )}
+
+            <Modal
+              isOpen={stopModalIsOpen}
+              onRequestClose={() => setStopModalIsOpen(false)}
+              style={customModalStyles}
+              contentLabel="평가 중지 알림"
+              ariaHideApp={false}
+            >
+              <div className="flex flex-col items-center font-sans">
+                <h2 className="text-xl font-bold mt-4 mb-6 text-center">평가가 중지되었습니다.</h2>
+                <button
+                  onClick={() => setStopModalIsOpen(false)}
+                  className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mb-4"
+                >
+                  확인
+                </button>
+              </div>
+            </Modal>
+          </div>
         </div>
       </div>
-    </Modal>
-
-    {isEvaluating && (
-      <button
-        onClick={stopEvaluation}
-        className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300 mt-4"
-      >
-        <div className="flex justify-center items-center space-x-2">
-          <span>평가 중지</span>
-          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-        </div>
-      </button>
-    )}
     </div>
-    </div>
-    </div>
-    </div>
-    );
-    }
+  );
+}
 
 export default StudentEvaluationTool;
