@@ -1,4 +1,4 @@
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+const pdfParse = require('pdf-parse');
 const multipart = require('parse-multipart-data');
 const axios = require('axios');
 const admin = require('firebase-admin');
@@ -21,18 +21,11 @@ const db = admin.firestore();
 
 async function extractTextFromPDF(pdfBuffer) {
   try {
-    const uint8Array = new Uint8Array(pdfBuffer);
-    const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
-    let fullText = '';
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const text = content.items.map(item => item.str).join(' ');
-      fullText += text + '\n';
-    }
-    return fullText;
+    const data = await pdfParse(pdfBuffer);
+    console.log("Extracted text from PDF:", data.text);  // 추출된 텍스트를 콘솔에 로깅
+    return data.text;
   } catch (error) {
-    console.error('PDF 텍스트 추출 오류:', error);
+    console.error("Error extracting text from PDF:", error);
     throw new Error('PDF에서 텍스트를 추출하는 중 오류가 발생했습니다.');
   }
 }
@@ -42,7 +35,7 @@ async function extractEvaluationCriteria(text, apiKey) {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -71,7 +64,7 @@ async function extractEvaluationCriteria(text, apiKey) {
     
     return JSON.parse(jsonString);
   } catch (error) {
-    console.error('OpenAI API 오류:', error);
+    console.error("Error extracting evaluation criteria:", error);
     throw new Error('평가 기준 추출 중 오류가 발생했습니다: ' + error.message);
   }
 }
@@ -81,7 +74,7 @@ async function extractTotalStudents(text, apiKey) {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -111,7 +104,7 @@ async function extractTotalStudents(text, apiKey) {
     const result = JSON.parse(jsonString);
     return result.총학생수;
   } catch (error) {
-    console.error('OpenAI API 오류:', error);
+    console.error("Error extracting total students:", error);
     throw new Error('총 학생 수 추출 중 오류가 발생했습니다: ' + error.message);
   }
 }
@@ -129,6 +122,7 @@ async function getApiKey(userId, teacherId) {
         openaiApiKey = teacherData.openaiKey;
       }
     } else {
+      console.error("Teacher not found:", teacherId);
       throw new Error('Teacher not found');
     }
   } else if (userId) {
@@ -144,6 +138,7 @@ async function getApiKey(userId, teacherId) {
   }
 
   if (!openaiApiKey) {
+    console.error("API key not found for user:", userId);
     throw new Error('API key not found');
   }
 
@@ -157,7 +152,6 @@ exports.handler = async function (event, context) {
 
   try {
     const contentType = event.headers['content-type'];
-    console.log('Content-Type:', contentType);
     
     if (contentType && contentType.includes('multipart/form-data')) {
       const boundary = multipart.getBoundary(contentType);
@@ -173,12 +167,11 @@ exports.handler = async function (event, context) {
           teacherId = part.data.toString();
         } else if (part.filename && part.filename.endsWith('.pdf')) {
           pdfBuffer = part.data;
-          console.log('PDF file received');
         }
       }
 
       if (!pdfBuffer) {
-        console.log('PDF file not found in request');
+        console.error("PDF file not uploaded");
         return {
           statusCode: 400,
           body: JSON.stringify({ error: 'PDF 파일이 업로드되지 않았습니다.' }),
@@ -186,7 +179,7 @@ exports.handler = async function (event, context) {
       }
 
       if (!userId && !teacherId) {
-        console.log('User ID or Teacher ID not found in request');
+        console.error("User ID or Teacher ID not provided");
         return {
           statusCode: 400,
           body: JSON.stringify({ error: 'User ID 또는 Teacher ID가 제공되지 않았습니다.' }),
@@ -196,12 +189,9 @@ exports.handler = async function (event, context) {
       const openaiApiKey = await getApiKey(userId, teacherId);
 
       const fullText = await extractTextFromPDF(pdfBuffer);
-      console.log('Extracted text length:', fullText.length);
       
       const evaluationCriteria = await extractEvaluationCriteria(fullText, openaiApiKey);
       const totalStudents = await extractTotalStudents(fullText, openaiApiKey);
-      console.log('Extracted evaluation criteria:', evaluationCriteria);
-      console.log('Total students:', totalStudents);
 
       return {
         statusCode: 200,
@@ -213,14 +203,14 @@ exports.handler = async function (event, context) {
       };
 
     } else {
-      console.log('Invalid content type:', contentType);
+      console.error("Invalid request format");
       return {
         statusCode: 400,
         body: JSON.stringify({ error: '잘못된 요청 형식입니다.' }),
       };
     }
   } catch (error) {
-    console.error('Error details:', error);
+    console.error("Error in handler:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: '처리 중 오류가 발생했습니다.', details: error.message }),

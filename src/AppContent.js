@@ -79,8 +79,6 @@ function AppContent() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        console.log("Firebase Auth User:", authUser);
-        
         try {
           const userDocRef = doc(db, "users", authUser.uid);
           const userDoc = await getDoc(userDocRef);
@@ -88,20 +86,14 @@ function AppContent() {
           let nickname = authUser.displayName;
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log("Firestore User Data:", userData);
             nickname = userData.nickname || nickname;
-          } else {
-            console.log("Firestore 문서가 존재하지 않습니다.");
           }
-
-          console.log("Final nickname:", nickname);
 
           const updatedUser = {
             ...authUser,
             nickname: nickname
           };
           
-          console.log("Updated User Object:", updatedUser);
           setUser(updatedUser);
           
           if (isManualLogin) {
@@ -113,14 +105,12 @@ function AppContent() {
             setIsManualLogin(false);
           }
         } catch (error) {
-          console.error("Error fetching user data:", error);
           setUser({
             ...authUser,
             nickname: authUser.displayName || '선생님'
           });
         }
       } else {
-        console.log("No authenticated user");
         setUser(null);
         setIsEditProfileModalOpen(false);
       }
@@ -129,7 +119,6 @@ function AppContent() {
     const storedStudentSession = Cookies.get('studentSession');
     if (storedStudentSession) {
       const parsedSession = JSON.parse(storedStudentSession);
-      console.log("Stored Student Session:", parsedSession);
       setStudentSession(parsedSession);
       if (isManualLogin) {
         setShowLoginSuccess(true);
@@ -145,7 +134,6 @@ function AppContent() {
   }, [isManualLogin]);
 
   const handleStudentLoginSuccess = useCallback((teacherData) => {
-    console.log("학생 로그인 성공:", teacherData);
     const sessionData = {
       teacherId: teacherData.userId,
       teacherNickname: teacherData.nickname || '선생님',

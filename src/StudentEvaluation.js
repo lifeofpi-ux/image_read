@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import './App.css';
 import './custom.css';
 import Modal from 'react-modal';
-import { FaCopy, FaDownload } from 'react-icons/fa';
+import { FaCopy, FaDownload, FaInfoCircle } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -42,7 +42,8 @@ const StudentEvaluation = ({ evaluations }) => {
     const ws = XLSX.utils.json_to_sheet(evaluations.map(evaluation => ({
       '번호': evaluation.학생데이터.번호,
       '이름': evaluation.학생데이터.이름,
-      '평가결과': evaluation.평가결과
+      '평가결과': evaluation.평가결과,
+      ...evaluation.학생데이터.평가점수
     })));
     XLSX.utils.book_append_sheet(wb, ws, "학생평가결과");
     XLSX.writeFile(wb, "학생평가결과.xlsx");
@@ -59,12 +60,21 @@ const StudentEvaluation = ({ evaluations }) => {
       {evaluations.map((evaluation, index) => (
         <div key={index} className="bg-gray-100 p-4 rounded-lg shadow-md mb-4">
           <div className="flex justify-between items-center mb-2">
-            <span className="font-semibold">{evaluation.학생데이터.번호}번 {evaluation.학생데이터.이름}</span>
-            <button onClick={() => copyToClipboard(evaluation.평가결과)} className="text-gray-400 hover:text-gray-500">
-              <FaCopy size={12} />
-            </button>
+            <span className="font-semibold">
+              {evaluation.학생데이터.번호}번 {evaluation.학생데이터.이름}
+            </span>
+            <div className="flex items-center">
+              <span className="text-xs text-gray-400 mr-3">
+                {Object.entries(evaluation.학생데이터.평가점수)
+                  .map(([area, score]) => `${area}(${score})`)
+                  .join(' ')}
+              </span>
+              <button onClick={() => copyToClipboard(evaluation.평가결과)} className="text-gray-400 hover:text-gray-500">
+                <FaCopy size={12} />
+              </button>
+            </div>
           </div>
-          <p className="text-gray-700">{evaluation.평가결과}</p>
+          <p className="text-gray-700 mt-2">{evaluation.평가결과}</p>
         </div>
       ))}
     </div>
@@ -74,7 +84,10 @@ const StudentEvaluation = ({ evaluations }) => {
 const ProgressBar = ({ progress, total }) => (
   <div className="w-full mt-4">
     <div className="flex justify-between items-center mb-1">
-      <span className="text-sm font-medium text-gray-700">진행률</span>
+      <div className="flex items-center">
+        <span className="text-sm font-medium text-gray-700 mr-2">진행률</span>
+        <span className="text-sm font-medium text-blue-500">{progress}%</span>
+      </div>
       <span className="text-sm font-medium text-gray-700">{total}</span>
     </div>
     <div className="w-full bg-gray-200 rounded-full h-3 relative">
@@ -88,7 +101,7 @@ const ProgressBar = ({ progress, total }) => (
 
 const ToneSelector = ({ selectedTone, onToneChange }) => (
   <div className="flex justify-center space-x-4">
-    {['niceRecord', 'growthFeedback'].map((tone) => (
+    {['neisRecord', 'growthFeedback'].map((tone) => (
       <button
         key={tone}
         className={`px-4 py-2 rounded-full transition-colors duration-300 ease-in-out ${
@@ -103,7 +116,7 @@ const ToneSelector = ({ selectedTone, onToneChange }) => (
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         )}
-        {tone === 'niceRecord' ? '나이스 기록용' : '성장 피드백용'}
+        {tone === 'neisRecord' ? '나이스 기록용' : '성장 피드백용'}
       </button>
     ))}
   </div>
@@ -120,8 +133,9 @@ function StudentEvaluationTool() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [selectedTone, setSelectedTone] = useState('niceRecord');
+  const [selectedTone, setSelectedTone] = useState('neisRecord');
   const [stopModalIsOpen, setStopModalIsOpen] = useState(false);
+  const [infoModalIsOpen, setInfoModalIsOpen] = useState(false);
   const abortControllerRef = useRef(null);
   const [user, setUser] = useState(null);
   const [isTeacher, setIsTeacher] = useState(false);
@@ -161,7 +175,6 @@ function StudentEvaluationTool() {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
       setPdfFile(file);
-      console.log('파일 선택됨:', file);
     } else {
       setError('PDF 파일만 업로드 가능합니다.');
       setPdfFile(null);
@@ -208,13 +221,11 @@ function StudentEvaluationTool() {
       }
 
       const data = await response.json();
-      console.log('Extracted PDF Data:', data.fullText);
       setEvaluationCriteria({ 영역: data.영역, 성취기준: data.성취기준, 평가요소: data.평가요소 });
       setTotalStudents(data.총학생수);
       setFullText(data.fullText);
       setModalIsOpen(true);
     } catch (error) {
-      console.error('Error details:', error);
       setError('PDF 처리 중 오류가 발생했습니다: ' + error.message);
     } finally {
       setIsLoading(false);
@@ -250,8 +261,6 @@ function StudentEvaluationTool() {
           tone: selectedTone,
         };
   
-        console.log('Sending request data:', requestData); // 디버깅을 위한 로그
-  
         const response = await fetch(EVALUATE_STUDENT_API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -269,13 +278,12 @@ function StudentEvaluationTool() {
         setProgress(Math.round((i / totalStudents) * 100));
   
         if (signal.aborted) {
-          throw new Error('평가가 취소되었습니다.');
+          throw new Error('평가가 중지되었습니다.');
         }
       }
     } catch (error) {
-      console.error('Error evaluating student:', error);
-      if (error.name === 'AbortError' || error.message === '평가가 취소되었습니다.') {
-        setError('평가가 취소되었습니다.');
+      if (error.name === 'AbortError' || error.message === '평가가 중지되었습니다.') {
+        setError('평가가 중지되었습니다.');
       } else {
         setError(`학생 평가 중 오류가 발생했습니다: ${error.message}`);
       }
@@ -285,7 +293,6 @@ function StudentEvaluationTool() {
     }
   }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated]);
   
-
   const stopEvaluation = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -321,7 +328,15 @@ function StudentEvaluationTool() {
       <div className="relative py-3">
         <div className="relative px-4 py-10 bg-white w-[700px] rounded-lg">
           <div className="w-full">
-            <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">학생 성적 평가 도구</h1>
+            <div className="flex items-center justify-center mb-2">
+              <h1 className="text-2xl font-semibold text-center text-gray-800">학생 성적 평가 도구</h1>
+              <button 
+                onClick={() => setInfoModalIsOpen(true)}
+                className="ml-2 text-gray-500 hover:text-gray-700"
+              >
+                <FaInfoCircle size={20} />
+              </button>
+            </div>
             <div className="text-sm font-normal text-center mb-10 text-gray-400">PDF 기반 성적 분석</div>
 
             {isAuthenticated ? (
@@ -427,6 +442,29 @@ function StudentEvaluationTool() {
                 <button
                   onClick={() => setStopModalIsOpen(false)}
                   className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mb-4"
+                >
+                  확인
+                </button>
+              </div>
+            </Modal>
+
+            <Modal
+              isOpen={infoModalIsOpen}
+              onRequestClose={() => setInfoModalIsOpen(false)}
+              style={customModalStyles}
+              contentLabel="NEIS 교과 성적 데이터 PDF 출력 방법"
+              ariaHideApp={false}
+            >
+              <div className="flex flex-col items-center font-sans">
+                <h2 className="text-xl font-bold mt-4 mb-6 text-center">🍀NEIS 교과 성적 데이터 PDF 출력 방법</h2>
+                <ol className="list-decimal list-inside text-left ">
+                  <li className="mb-2 text-sm font-light">메뉴 : 학급담임 - 성적조회 - 교과별성적조회 탭으로 이동</li>
+                  <li className="mb-2 text-sm font-light">옵션 설정 : 한페이지로 출력 체크(중요) 후 조회 버튼</li>
+                  <li className="mb-2 text-sm font-light">저장 : 뷰어 왼쪽 저장 아이콘 클릭 및 PDF 선택 후 저장</li>
+                </ol>
+                <button
+                  onClick={() => setInfoModalIsOpen(false)}
+                  className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mt-6"
                 >
                   확인
                 </button>

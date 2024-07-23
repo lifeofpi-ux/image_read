@@ -7,10 +7,6 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const menuRef = useRef(null);
 
-  useEffect(() => {
-    console.log("UserMenu Component:", { user, studentSession });
-  }, [user, studentSession]);
-
   const handleClickOutside = (event) => {
     if (menuRef.current && !menuRef.current.contains(event.target)) {
       setIsOpen(false);

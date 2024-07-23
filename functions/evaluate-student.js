@@ -22,7 +22,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
     let tonePrompt = '';
-    if (tone === 'niceRecord') {
+    if (tone === 'neisRecord') {
       tonePrompt = '보임. 씀. ~음. ~함. ~됨. 등의 자연스러운 형태로 문장이 끝나야 하며 현재 시제로 간결하게 문장을 작성해줘. 학생의 각 영역별 성취기준과 평가요소 문구를 적절히 학생의 평가 결과와 연관지어 평가 문장을 작성함. "우수를 받았음" 등과 같이 평가 결과 단어를 직접적으로 사용하면 안됨.';
     } else if (tone === 'growthFeedback') {
       tonePrompt = '학생에게 긍정과 성찰을 돕는 격식있지만 따뜻하고 편안한 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 현재 시제로 문장을 작성해야 합니다.';
@@ -31,7 +31,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -68,7 +68,6 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     
     return JSON.parse(jsonString);
   } catch (error) {
-    console.error('OpenAI API 오류:', error);
     throw new Error(`${studentIndex}번 학생 데이터 추출 및 평가 중 오류가 발생했습니다: ${error.message}`);
   }
 }
@@ -80,12 +79,8 @@ exports.handler = async function (event, context) {
 
   try {
     const { evaluationCriteria, studentIndex, fullText, tone } = JSON.parse(event.body);
-    console.log('Received evaluation criteria:', evaluationCriteria);
-    console.log('Received student index:', studentIndex);
-    console.log('Received tone:', tone);
 
     if (!evaluationCriteria || studentIndex === undefined || !fullText || !tone) {
-      console.log('Invalid request data');
       return {
         statusCode: 400,
         body: JSON.stringify({ error: '잘못된 요청 데이터입니다.' }),
@@ -95,14 +90,12 @@ exports.handler = async function (event, context) {
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
     const studentDataAndEvaluation = await extractAndEvaluateStudent(fullText, studentIndex, evaluationCriteria, tone, openaiApiKey);
-    console.log(`Extracted and evaluated data for student ${studentIndex}:`, studentDataAndEvaluation);
 
     return {
         statusCode: 200,
         body: JSON.stringify(studentDataAndEvaluation),
     };
   } catch (error) {
-    console.error('Error details:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: '처리 중 오류가 발생했습니다.', details: error.message }),
