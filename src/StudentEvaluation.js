@@ -146,6 +146,30 @@ const WordCountSlider = ({ wordCount, onWordCountChange }) => (
   </div>
 );
 
+const CreativitySlider = ({ creativity, onCreativityChange }) => (
+  <div className="mt-4 w-full mb-4">
+    <label htmlFor="creativity" className="block text-sm font-medium text-gray-700">
+      창의적 표현: {creativity === 0.1 ? '낮음' : creativity === 0.5 ? '보통' : creativity === 0.9 ? '높음' : `${creativity.toFixed(2)}`}
+    </label>
+    <input
+      type="range"
+      id="creativity"
+      name="creativity"
+      min="0.1"
+      max="0.9"
+      step="0.1"
+      value={creativity}
+      onChange={(e) => onCreativityChange(Number(e.target.value))}
+      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+    />
+    <div className="flex justify-between text-xs text-gray-600">
+      <span>엄격</span>
+      <span>보통</span>
+      <span>유연</span>
+    </div>
+  </div>
+);
+
 function StudentEvaluationTool() {
   const [pdfFile, setPdfFile] = useState(null);
   const [evaluationCriteria, setEvaluationCriteria] = useState(null);
@@ -162,6 +186,7 @@ function StudentEvaluationTool() {
   const [infoModalIsOpen, setInfoModalIsOpen] = useState(false);
   const [settingsModalIsOpen, setSettingsModalIsOpen] = useState(false);
   const [wordCount, setWordCount] = useState(250);
+  const [creativity, setCreativity] = useState(0.5);
   const abortControllerRef = useRef(null);
   const [user, setUser] = useState(null);
   const [isTeacher, setIsTeacher] = useState(false);
@@ -286,6 +311,7 @@ function StudentEvaluationTool() {
           fullText,
           tone: selectedTone,
           wordCount,
+          creativity,
         };
   
         const response = await fetch(EVALUATE_STUDENT_API_URL, {
@@ -318,7 +344,7 @@ function StudentEvaluationTool() {
       setIsEvaluating(false);
       setIsLoading(false);
     }
-  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount]);
+  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount, creativity]);
   
   const stopEvaluation = () => {
     if (abortControllerRef.current) {
@@ -515,6 +541,7 @@ function StudentEvaluationTool() {
                 <h2 className="text-xl font-bold mt-2 text-center mb-8" >✨ 평가 프롬프트 설정 </h2>
                 <ToneSelector selectedTone={selectedTone} onToneChange={setSelectedTone} />
                 <WordCountSlider wordCount={wordCount} onWordCountChange={setWordCount} />
+                <CreativitySlider creativity={creativity} onCreativityChange={setCreativity} />
                 <button
                   onClick={() => setSettingsModalIsOpen(false)}
                   className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mt-6 w-full "
