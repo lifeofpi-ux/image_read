@@ -125,7 +125,7 @@ const ToneSelector = ({ selectedTone, onToneChange }) => (
 const WordCountSlider = ({ wordCount, onWordCountChange }) => (
   <div className="mt-8 w-full mb-4">
     <label htmlFor="word-count" className="block text-sm font-medium text-gray-700">
-      피드백 글자 수: {wordCount}
+      *피드백 글자 수: {wordCount}
     </label>
     <input
       type="range"
