@@ -122,30 +122,6 @@ const ToneSelector = ({ selectedTone, onToneChange }) => (
   </div>
 );
 
-const WordCountSlider = ({ wordCount, onWordCountChange }) => (
-  <div className="mt-8 w-full mb-4">
-    <label htmlFor="word-count" className="block text-sm font-medium text-gray-700">
-      *피드백 글자 수: {wordCount}
-    </label>
-    <input
-      type="range"
-      id="word-count"
-      name="word-count"
-      min="150"
-      max="350"
-      step="50"
-      value={wordCount}
-      onChange={(e) => onWordCountChange(Number(e.target.value))}
-      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-    />
-    <div className="flex justify-between text-xs text-gray-600">
-      <span>150</span>
-      <span>250</span>
-      <span>350</span>
-    </div>
-  </div>
-);
-
 const CreativitySlider = ({ creativity, onCreativityChange }) => (
   <div className="mt-4 w-full mb-4">
     <label htmlFor="creativity" className="block text-sm font-medium text-gray-700">
@@ -169,6 +145,32 @@ const CreativitySlider = ({ creativity, onCreativityChange }) => (
     </div>
   </div>
 );
+
+const WordCountSlider = ({ wordCount, onWordCountChange }) => (
+  <div className="mt-8 w-full mb-4">
+    <label htmlFor="word-count" className="block text-sm font-medium text-gray-700">
+      피드백 글자 수: {wordCount}
+    </label>
+    <input
+      type="range"
+      id="word-count"
+      name="word-count"
+      min="150"
+      max="350"
+      step="50"
+      value={wordCount}
+      onChange={(e) => onWordCountChange(Number(e.target.value))}
+      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+    />
+    <div className="flex justify-between text-xs text-gray-600">
+      <span>150</span>
+      <span>250</span>
+      <span>350</span>
+    </div>
+  </div>
+);
+
+
 
 function StudentEvaluationTool() {
   const [pdfFile, setPdfFile] = useState(null);
