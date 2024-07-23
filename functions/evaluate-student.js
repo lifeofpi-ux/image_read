@@ -17,7 +17,7 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
-async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey) {
+async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount) {
   try {
     const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
@@ -35,7 +35,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
         messages: [
           {
             role: "system",
-            content: `"학생들의 성취를 정확한 근거를 토대로 피드백하는 교사의 역할. 말투 지침: ${tonePrompt} 평가결과 문장은 학생 이름을 반드시 제외하고 250글자 정도의 피드백만 제시해야 함. `
+            content: `"학생들의 성취를 정확한 근거를 토대로 피드백하는 교사의 역할. 말투 지침: ${tonePrompt} 평가결과 문장은 학생 이름을 반드시 제외하고 ${wordCount}글자 정도의 피드백만 제시해야 함. `
           },
           {
             role: "user",
@@ -78,9 +78,9 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { evaluationCriteria, studentIndex, fullText, tone } = JSON.parse(event.body);
+    const { evaluationCriteria, studentIndex, fullText, tone, wordCount } = JSON.parse(event.body);
 
-    if (!evaluationCriteria || studentIndex === undefined || !fullText || !tone) {
+    if (!evaluationCriteria || studentIndex === undefined || !fullText || !tone || !wordCount) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: '잘못된 요청 데이터입니다.' }),
@@ -89,7 +89,7 @@ exports.handler = async function (event, context) {
 
     const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    const studentDataAndEvaluation = await extractAndEvaluateStudent(fullText, studentIndex, evaluationCriteria, tone, openaiApiKey);
+    const studentDataAndEvaluation = await extractAndEvaluateStudent(fullText, studentIndex, evaluationCriteria, tone, openaiApiKey, wordCount);
 
     return {
         statusCode: 200,

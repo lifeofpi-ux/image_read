@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import './App.css';
 import './custom.css';
 import Modal from 'react-modal';
-import { FaCopy, FaDownload, FaInfoCircle } from 'react-icons/fa';
+import { FaCopy, FaDownload, FaInfoCircle, FaCog } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
 import { auth, db } from './firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -100,11 +100,11 @@ const ProgressBar = ({ progress, total }) => (
 );
 
 const ToneSelector = ({ selectedTone, onToneChange }) => (
-  <div className="flex justify-center space-x-4">
+  <div className="flex justify-center space-x-4 w-full mt-2">
     {['neisRecord', 'growthFeedback'].map((tone) => (
       <button
         key={tone}
-        className={`px-4 py-2 rounded-full transition-colors duration-300 ease-in-out ${
+        className={`px-2 py-2 rounded-full transition-colors duration-300 ease-in-out text-sm ${
           selectedTone === tone
             ? 'bg-green-500 text-white'
             : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -112,13 +112,37 @@ const ToneSelector = ({ selectedTone, onToneChange }) => (
         onClick={() => onToneChange(tone)}
       >
         {selectedTone === tone && (
-          <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-5 h-5 mr-1" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
         )}
-        {tone === 'neisRecord' ? '나이스 기록용' : '성장 피드백용'}
+        {tone === 'neisRecord' ? '나이스 기록' : '피드백용'}
       </button>
     ))}
+  </div>
+);
+
+const WordCountSlider = ({ wordCount, onWordCountChange }) => (
+  <div className="mt-8 w-full mb-4">
+    <label htmlFor="word-count" className="block text-sm font-medium text-gray-700">
+      피드백 글자 수: {wordCount}
+    </label>
+    <input
+      type="range"
+      id="word-count"
+      name="word-count"
+      min="150"
+      max="350"
+      step="50"
+      value={wordCount}
+      onChange={(e) => onWordCountChange(Number(e.target.value))}
+      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+    />
+    <div className="flex justify-between text-xs text-gray-600">
+      <span>150</span>
+      <span>250</span>
+      <span>350</span>
+    </div>
   </div>
 );
 
@@ -136,6 +160,8 @@ function StudentEvaluationTool() {
   const [selectedTone, setSelectedTone] = useState('neisRecord');
   const [stopModalIsOpen, setStopModalIsOpen] = useState(false);
   const [infoModalIsOpen, setInfoModalIsOpen] = useState(false);
+  const [settingsModalIsOpen, setSettingsModalIsOpen] = useState(false);
+  const [wordCount, setWordCount] = useState(250);
   const abortControllerRef = useRef(null);
   const [user, setUser] = useState(null);
   const [isTeacher, setIsTeacher] = useState(false);
@@ -259,6 +285,7 @@ function StudentEvaluationTool() {
           studentIndex: i,
           fullText,
           tone: selectedTone,
+          wordCount,
         };
   
         const response = await fetch(EVALUATE_STUDENT_API_URL, {
@@ -291,7 +318,7 @@ function StudentEvaluationTool() {
       setIsEvaluating(false);
       setIsLoading(false);
     }
-  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated]);
+  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount]);
   
   const stopEvaluation = () => {
     if (abortControllerRef.current) {
@@ -310,12 +337,12 @@ function StudentEvaluationTool() {
       bottom: 'auto',
       marginRight: '-50%',
       transform: 'translate(-50%, -50%)',
-      padding: '30px 20px',
+      padding: '30px 40px',
       border: 'none',
       borderRadius: '0.5rem',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       maxWidth: '90%',
-      width: '400px',
+      width: '360px',
     },
     overlay: {
       backgroundColor: 'rgba(0, 0, 0, 0.75)',
@@ -353,7 +380,13 @@ function StudentEvaluationTool() {
                 </div>
 
                 <div className="flex justify-center items-center space-x-4 mb-8">
-                  <ToneSelector selectedTone={selectedTone} onToneChange={setSelectedTone} />
+                  <button
+                    onClick={() => setSettingsModalIsOpen(true)}
+                    className="px-4 py-2 rounded-full transition-colors duration-300 ease-in-out bg-gray-200 text-gray-700 hover:bg-gray-300 w-40 h-10 flex items-center font-bold justify-center"
+                  >
+                    <FaCog className="mr-2" />
+                    평가 설정
+                  </button>
                   <button
                     onClick={handlePdfParsing}
                     disabled={isLoading || !pdfFile}
@@ -397,7 +430,7 @@ function StudentEvaluationTool() {
               ariaHideApp={false}
             >
               <div className="flex flex-col items-center font-sans">
-                <h2 className="text-xl font-bold mt-4 mb-6 text-center">✨ 피드백 생성을 진행하시겠습니까?</h2>
+                <h2 className="text-xl font-bold mt-4 mb-6 text-center">✨ 피드백을 진행하시겠습니까?</h2>
                 <div className="flex justify-center space-x-4">
                   <button
                     onClick={() => setModalIsOpen(false)}
@@ -452,19 +485,39 @@ function StudentEvaluationTool() {
               isOpen={infoModalIsOpen}
               onRequestClose={() => setInfoModalIsOpen(false)}
               style={customModalStyles}
-              contentLabel="NEIS 교과 성적 데이터 PDF 출력 방법"
+              contentLabel="NEIS 성적 데이터 출력 방법"
               ariaHideApp={false}
             >
               <div className="flex flex-col items-center font-sans">
-                <h2 className="text-xl font-bold mt-4 mb-6 text-center">🍀NEIS 교과 성적 데이터 PDF 출력 방법</h2>
-                <ol className="list-decimal list-inside text-left ">
-                  <li className="mb-2 text-sm font-light">메뉴 : 학급담임 - 성적조회 - 교과별성적조회 탭으로 이동</li>
-                  <li className="mb-2 text-sm font-light">옵션 설정 : 한페이지로 출력 체크(중요) 후 조회 버튼</li>
-                  <li className="mb-2 text-sm font-light">저장 : 뷰어 왼쪽 저장 아이콘 클릭 및 PDF 선택 후 저장</li>
+                <h2 className="text-xl font-bold mt-4 mb-6 text-center">🍀NEIS 성적 데이터 출력 방법</h2>
+                <ol className="list-inside text-left ">
+                  <li className="mb-2 text-sm font-light">I. NEIS 학급담임-성적조회-교과별성적조회 탭</li>
+                  <li className="mb-2 text-sm font-light">II. 옵션 중 한페이지로 출력 체크(중요) 후 조회 버튼</li>
+                  <li className="mb-2 text-sm font-light">III. 뷰어 왼쪽 저장 아이콘 클릭 및 PDF 선택 후 저장</li>
                 </ol>
                 <button
                   onClick={() => setInfoModalIsOpen(false)}
                   className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mt-6"
+                >
+                  확인
+                </button>
+              </div>
+            </Modal>
+
+            <Modal
+              isOpen={settingsModalIsOpen}
+              onRequestClose={() => setSettingsModalIsOpen(false)}
+              style={customModalStyles}
+              contentLabel="평가 프롬프트 설정"
+              ariaHideApp={false}
+            >
+              <div className="flex flex-col items-center font-sans w-full">
+                <h2 className="text-xl font-bold mt-2 text-center mb-8" >✨ 평가 프롬프트 설정 </h2>
+                <ToneSelector selectedTone={selectedTone} onToneChange={setSelectedTone} />
+                <WordCountSlider wordCount={wordCount} onWordCountChange={setWordCount} />
+                <button
+                  onClick={() => setSettingsModalIsOpen(false)}
+                  className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mt-6 w-full "
                 >
                   확인
                 </button>
