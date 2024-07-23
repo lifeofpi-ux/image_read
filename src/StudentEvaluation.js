@@ -163,9 +163,9 @@ const CreativitySlider = ({ creativity, onCreativityChange }) => (
       className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
     />
     <div className="flex justify-between text-xs text-gray-600">
-      <span>엄격</span>
+      <span>낮음</span>
       <span>보통</span>
-      <span>유연</span>
+      <span>높음</span>
     </div>
   </div>
 );
