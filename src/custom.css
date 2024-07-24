@@ -22,7 +22,21 @@
     min-height: calc(100vh - 72px)
 }
 
-
-
+.highlight-effect {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .highlight-effect::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 0.2em;
+    background-color: pink;
+    z-index: -1;
+  }
+  
 
 

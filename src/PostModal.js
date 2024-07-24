@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { auth } from './firebase'; // auth를 가져오기
+import { auth } from './firebase'; 
 
 const PostModal = React.memo(({ isOpen, onClose, onSave, onDelete, initialPost = null, isEditing = false }) => {
-  const [post, setPost] = useState(() => initialPost || { text: '', author: '' });
-  const [password, setPassword] = useState('');
+  const [post, setPost] = useState(() => initialPost || { text: '', author: '', password: '' });
+  const [inputPassword, setInputPassword] = useState('');
   const user = auth.currentUser;
 
   useEffect(() => {
@@ -11,9 +11,9 @@ const PostModal = React.memo(({ isOpen, onClose, onSave, onDelete, initialPost =
       if (isEditing && initialPost) {
         setPost(initialPost);
       } else {
-        setPost({ text: '', author: '' });
+        setPost({ text: '', author: '', password: '' });
       }
-      setPassword('');
+      setInputPassword('');
     }
   }, [isOpen, isEditing, initialPost]);
 
@@ -23,25 +23,38 @@ const PostModal = React.memo(({ isOpen, onClose, onSave, onDelete, initialPost =
   };
 
   const handlePasswordChange = (e) => {
-    setPassword(e.target.value);
+    setInputPassword(e.target.value);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!user && !password) {
-      alert('비밀번호를 입력해주세요.');
-      return;
+    if (!user) {
+      if (!inputPassword) {
+        alert('비밀번호를 입력해주세요.');
+        return;
+      }
+      if (isEditing && inputPassword !== post.password) {
+        alert('비밀번호가 일치하지 않습니다.');
+        return;
+      }
+      post.password = inputPassword;
     }
-    onSave({ ...post, password });
+    onSave(post);
     onClose();
   };
 
   const handleDelete = () => {
-    if (!user && !password) {
-      alert('비밀번호를 입력해주세요.');
-      return;
+    if (!user) {
+      if (!inputPassword) {
+        alert('비밀번호를 입력해주세요.');
+        return;
+      }
+      if (inputPassword !== post.password) {
+        alert('비밀번호가 일치하지 않습니다.');
+        return;
+      }
     }
-    onDelete({ ...post, password });
+    onDelete(post);
     onClose();
   };
 
@@ -90,7 +103,7 @@ const PostModal = React.memo(({ isOpen, onClose, onSave, onDelete, initialPost =
                 id="password"
                 name="password"
                 type="password"
-                value={password}
+                value={inputPassword}
                 onChange={handlePasswordChange}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               />

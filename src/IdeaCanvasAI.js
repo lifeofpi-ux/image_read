@@ -87,12 +87,12 @@ const Post = ({ post, onEdit }) => {
     <>
       <style>{scrollbarStyles}</style>
       <div
-        className="relative text-sm text-gray-800 m-2 flex-shrink-0 bg-yellow-300"
+        className="relative text-sm text-gray-800 m-2 flex-shrink-0 bg-customYellow"
         style={postStyles}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="font-semibold p-3 pb-0">{post.author}</div>
+        <div className="text-base font-semibold p-3 pb-0 highlight-effect">{post.author}</div>
         <div className="post-content" style={contentStyles}>
           <p>{post.text}</p>
         </div>
@@ -123,6 +123,7 @@ const Post = ({ post, onEdit }) => {
     </>
   );
 };
+
 
 const ChatMessage = ({ message }) => {
   return (
