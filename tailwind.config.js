@@ -10,6 +10,13 @@ module.exports = {
       },
       maxHeight: {
         '800px': '800px',
+        '500px': '500px',
+        '50px' : '50px'
+
+      },
+      
+      minHeight: {
+        '60vh': '60vh',
       },
       minWidth: {
         '1/4': '25%',
@@ -18,6 +25,16 @@ module.exports = {
         '300': '300px',
         '400': '400px',
         '500': '500px',
+      },
+      inset: {
+        '30': '30px',
+        '25': '25px',
+      },
+      width: {
+        'fit': 'fit-content',
+      },
+      colors: {
+        customYellow: 'rgb(246, 255, 127)',
       }
     },
   },

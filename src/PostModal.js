@@ -49,8 +49,8 @@ const PostModal = React.memo(({ isOpen, onClose, onSave, onDelete, initialPost =
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50" onClick={onClose}>
-      <div className="bg-white p-6 rounded-lg max-w-xl w-full shadow-lg" onClick={(e) => e.stopPropagation()}>
-        <h2 className="text-xl font-bold mb-4">{isEditing ? '포스트 수정' : '새 포스트 추가'}</h2>
+      <div className="bg-white p-6 rounded-lg max-w-[500px] w-full shadow-lg" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-xl font-bold mb-4">{isEditing ? '📝 포스트 수정' : '새 포스트 추가'}</h2>
         <form onSubmit={handleSubmit}>
           
           <div className="mb-4">
