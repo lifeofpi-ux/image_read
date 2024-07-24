@@ -13,8 +13,9 @@ import HomePage from './HomePage';
 import LoginSuccessModal from './LoginSuccessModal';
 import UserMenu from './UserMenu';
 import EditProfileModal from './EditProfileModal';
+import StudentEvaluation from './StudentEvaluation';
+import IdeaCanvasAI from './IdeaCanvasAI'; 
 import Cookies from 'js-cookie';
-import StudentEvaluation from './StudentEvaluation'; // 새로운 컴포넌트 임포트
 
 function AppContent() {
   const [isLeftSideTabOpen, setIsLeftSideTabOpen] = useState(false);
@@ -289,7 +290,10 @@ function AppContent() {
               <NavigationButton to="/conv-ai" text="💬 AI 채팅 도우미" />
             </li>
             <li className="mb-1">
-              <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" /> {/* 새로운 경로 추가 */}
+              <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" />
+            </li>
+            <li className="mb-1">
+              <NavigationButton to="/idea-canvas" text="🎨 아이디어 캔버스 AI" />
             </li>
           </ul>
           <div className="mt-auto text-sm font-bold text-gray-400 ml-4">
@@ -327,7 +331,8 @@ function AppContent() {
             <Route path="/image-analysis" element={(user || studentSession) ? <ImageAnalysis /> : <Navigate to="/" />} />
             <Route path="/rubric-report" element={(user || studentSession) ? <RubricReportAI /> : <Navigate to="/" />} />
             <Route path="/conv-ai" element={(user || studentSession) ? <ConvAI /> : <Navigate to="/" />} />
-            <Route path="/student-evaluation" element={(user || studentSession) ? <StudentEvaluation /> : <Navigate to="/" />} /> {/* 새로운 경로 추가 */}
+            <Route path="/student-evaluation" element={(user || studentSession) ? <StudentEvaluation /> : <Navigate to="/" />} />
+            <Route path="/idea-canvas" element={(user || studentSession) ? <IdeaCanvasAI /> : <Navigate to="/" />} />
             <Route path="/" element={
               <HomePage 
                 user={user} 
