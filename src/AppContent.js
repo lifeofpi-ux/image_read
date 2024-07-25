@@ -15,6 +15,7 @@ import UserMenu from './UserMenu';
 import EditProfileModal from './EditProfileModal';
 import StudentEvaluation from './StudentEvaluation';
 import IdeaCanvasAI from './IdeaCanvasAI'; 
+import TPACKLesson from './components/TPACKLesson'; 
 import Cookies from 'js-cookie';
 
 function AppContent() {
@@ -295,6 +296,9 @@ function AppContent() {
             <li className="mb-1">
               <NavigationButton to="/idea-canvas" text="🎨 아이디어 캔버스 AI" />
             </li>
+            <li className="mb-1">
+              <NavigationButton to="/tpack-lesson" text="📚 TPACK 수업 설계" />
+            </li>
           </ul>
           <div className="mt-auto text-sm font-bold text-gray-400 ml-4">
             2024. T.R.I.P.O.D.
@@ -333,6 +337,7 @@ function AppContent() {
             <Route path="/conv-ai" element={(user || studentSession) ? <ConvAI /> : <Navigate to="/" />} />
             <Route path="/student-evaluation" element={(user || studentSession) ? <StudentEvaluation /> : <Navigate to="/" />} />
             <Route path="/idea-canvas" element={(user || studentSession) ? <IdeaCanvasAI /> : <Navigate to="/" />} />
+            <Route path="/tpack-lesson" element={(user || studentSession) ? <TPACKLesson /> : <Navigate to="/" />} />
             <Route path="/" element={
               <HomePage 
                 user={user} 

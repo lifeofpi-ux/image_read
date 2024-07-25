@@ -8,7 +8,7 @@ import './custom.css';
 import PostModal from './PostModal';
 import { FaEdit, FaExpand, FaPlus, FaSync, FaComments } from 'react-icons/fa';
 
-const API_URL = '/api/analyze-ideas'; 
+const API_URL = '/api/analyze-ideas';
 
 const ExpandedPostModal = ({ isOpen, onClose, post }) => {
   if (!isOpen) return null;
@@ -296,6 +296,14 @@ const IdeaCanvasAI = () => {
       alert('수정할 포스트가 유효하지 않습니다.');
       return;
     }
+
+    const user = auth.currentUser;
+
+    if (!user && editedPost.password !== editPost.password) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
     const postRef = doc(db, "Posts", editedPost.id);
     try {
       await updateDoc(postRef, { ...editedPost, updatedAt: serverTimestamp() });
@@ -309,6 +317,11 @@ const IdeaCanvasAI = () => {
   };
 
   const handleDeletePost = async (post) => {
+    if (!auth.currentUser && prompt('비밀번호를 입력하세요:') !== post.password) {
+      alert('비밀번호가 일치하지 않습니다.');
+      return;
+    }
+
     try {
       await deleteDoc(doc(db, "Posts", post.id));
       setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
@@ -369,7 +382,6 @@ const IdeaCanvasAI = () => {
       setIsLoading(false);
     }
   };
-
 
   const canvasStyle = {
     background: '#f0f0f0', // 은은한 회색 배경
