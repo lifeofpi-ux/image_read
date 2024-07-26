@@ -245,7 +245,7 @@ const ChatPrompt = ({ isOpen, onClose, onSendMessage, messages, currentMessage, 
               outline: 'none',
               height: '50px',
               overflowY: 'hidden',
-              padding: '15px 40px 15px 15px'
+              padding: '12px 40px 15px 15px'
             }}
             value={currentMessage}
             onChange={(e) => setCurrentMessage(e.target.value)}
