@@ -514,21 +514,23 @@ const IdeaCanvasAI = () => {
               <FaSync />
             </button>
             {!studentSession && (
-              <button
-                onClick={() => setIsChatPromptOpen(!isChatPromptOpen)}
-                className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
-                title="AI Chat"
-              >
-                <FaComments />
-              </button>
+              <>
+                <button
+                  onClick={() => setIsChatPromptOpen(!isChatPromptOpen)}
+                  className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
+                  title="AI Chat"
+                >
+                  <FaComments />
+                </button>
+                <button
+                  onClick={() => setIsResetModalOpen(true)}
+                  className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
+                  title="캔버스 리셋"
+                >
+                  <FaTrash />
+                </button>
+              </>
             )}
-            <button
-              onClick={() => setIsResetModalOpen(true)}
-              className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
-              title="캔버스 리셋"
-            >
-              <FaTrash />
-            </button>
           </div>
         </div>
 
