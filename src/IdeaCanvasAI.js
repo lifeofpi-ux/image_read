@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, doc, updateDoc, deleteDoc, where } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, doc, updateDoc, deleteDoc, where, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import './App.css';
 import './custom.css';
 import PostModal from './PostModal';
-import { FaEdit, FaExpand, FaPlus, FaSync, FaComments } from 'react-icons/fa';
+import { FaEdit, FaExpand, FaPlus, FaSync, FaComments, FaTrash } from 'react-icons/fa'; // FaTrash 아이콘 추가
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 const API_URL = '/api/analyze-ideas';
 
@@ -15,7 +17,7 @@ const ExpandedPostModal = ({ isOpen, onClose, post }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg max-w-[500px] w-full max-h-[500px] overflow-y-auto">
+      <div className="bg-white p-6 rounded-lg max-w-[500px] w-full max-height-[500px] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4">{post.author}</h2>
         <p className="text-gray-700 mb-4">{post.text}</p>
         <button
@@ -29,9 +31,31 @@ const ExpandedPostModal = ({ isOpen, onClose, post }) => {
   );
 };
 
-const Post = ({ post, onEdit }) => {
+const Post = ({ post, onEdit, movePost, index, canDrag }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const ref = useRef(null);
+
+  const [{ isDragging }, drag] = useDrag({
+    type: 'post',
+    item: { index },
+    canDrag: canDrag,
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const [, drop] = useDrop({
+    accept: 'post',
+    hover: (draggedItem) => {
+      if (draggedItem.index !== index) {
+        movePost(draggedItem.index, index);
+        draggedItem.index = index;
+      }
+    },
+  });
+
+  drag(drop(ref));
 
   const handleMouseEnter = () => setIsHovered(true);
   const handleMouseLeave = () => setIsHovered(false);
@@ -45,7 +69,8 @@ const Post = ({ post, onEdit }) => {
     borderRadius: '10px',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
     transition: 'all 0.3s ease',
-    padding: '5px 10px 10px 10px'
+    padding: '5px 10px 10px 10px',
+    opacity: isDragging ? 0.5 : 1,
   };
 
   const contentStyles = {
@@ -55,6 +80,7 @@ const Post = ({ post, onEdit }) => {
     scrollbarWidth: 'thin',
     scrollbarColor: 'rgba(0, 0, 0, 0.1) transparent',
     padding: '10px',
+    whiteSpace: 'break-spaces'
   };
 
   const buttonStyles = {
@@ -87,13 +113,14 @@ const Post = ({ post, onEdit }) => {
     <>
       <style>{scrollbarStyles}</style>
       <div
+        ref={ref}
         className="relative text-sm text-gray-800 m-2 flex-shrink-0 bg-customYellow"
         style={postStyles}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className="text-base font-semibold p-3 pb-0 highlight-effect">{post.author}</div>
-        <div className="post-content" style={contentStyles}>
+        <div className="text-base font-semibold p-3 pb-0 ">{post.author}</div>
+        <div className="post-content" style={contentStyles} >
           <p>{post.text}</p>
         </div>
         {isHovered && (
@@ -123,7 +150,6 @@ const Post = ({ post, onEdit }) => {
     </>
   );
 };
-
 
 const ChatMessage = ({ message }) => {
   return (
@@ -204,19 +230,22 @@ const ChatPrompt = ({ isOpen, onClose, onSendMessage, messages, currentMessage, 
             <ChatMessage key={messages.length - 1 - idx} message={msg} />
           ))}
         </div>
+        {isLoading && (
+          <div className="relative bottom-3 left-3 w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
+        )}
         <div className="relative">
           <textarea
-            className="w-full text-gray-700 leading-tight pr-14 pl-4"
+            className="w-full text-gray-700 leading-tight  "
             style={{
               background: 'rgb(237 237 237)',
-              padding: '12px 50px 15px 15px',
               borderRadius: '16px',
               resize: 'none',
               border: '3px solid transparent',
               transition: 'border-color 0.3s ease',
               outline: 'none',
               height: '50px',
-              overflowY: 'hidden'
+              overflowY: 'hidden',
+              padding: '15px 40px 15px 15px'
             }}
             value={currentMessage}
             onChange={(e) => setCurrentMessage(e.target.value)}
@@ -231,9 +260,7 @@ const ChatPrompt = ({ isOpen, onClose, onSendMessage, messages, currentMessage, 
             </svg>
           </button>
         </div>
-        {isLoading && (
-          <div className="relative bottom-20 left-3 w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
-        )}
+       
       </div>
     </div>
   );
@@ -248,23 +275,30 @@ const IdeaCanvasAI = () => {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
     return sessionData ? JSON.parse(sessionData) : null;
   });
 
   const fetchPosts = useCallback(async () => {
+    setIsRefreshing(true);
     const user = auth.currentUser;
     const session = studentSession;
     const teacherId = session?.teacherId || user?.uid;
 
-    if (!teacherId) return;
+    if (!teacherId) {
+      setIsRefreshing(false);
+      return;
+    }
 
     const postsRef = collection(db, "Posts");
     const q = query(postsRef, where("teacherId", "==", teacherId), orderBy("createdAt", "asc"));
     const querySnapshot = await getDocs(q);
     const postList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     setPosts(postList);
+    setIsRefreshing(false);
   }, [studentSession]);
 
   useEffect(() => {
@@ -331,6 +365,33 @@ const IdeaCanvasAI = () => {
     }
   };
 
+  const handleDeleteAllPosts = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+      alert('사용자 인증이 필요합니다.');
+      return;
+    }
+
+    try {
+      const postsRef = collection(db, "Posts");
+      const q = query(postsRef, where("teacherId", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+
+      const batch = writeBatch(db);
+      querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      setPosts([]);
+      setIsResetModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting all posts:', error);
+      alert('모든 포스트 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const onSendMessage = async () => {
     if (!currentMessage) return;
 
@@ -368,14 +429,12 @@ const IdeaCanvasAI = () => {
       let errorMessage = "AI가 힘들어하고 있어요. 질문을 간결하게 작성해 주세요.";
       
       if (error.response && error.response.status === 500) {
-        // 500 오류일 경우 사용자 친화적인 메시지 표시
         const aiErrorMessage = {
           role: 'assistant',
           content: errorMessage
         };
         setMessages(prevMessages => [...prevMessages, aiErrorMessage]);
       } else {
-        // 다른 오류의 경우 기존 오류 메시지 표시
         alert(`Backend API 호출 중 오류가 발생했습니다: ${error.message}`);
       }
     } finally {
@@ -383,80 +442,133 @@ const IdeaCanvasAI = () => {
     }
   };
 
+  const movePost = (fromIndex, toIndex) => {
+    setPosts((prevPosts) => {
+      const updatedPosts = [...prevPosts];
+      const [movedPost] = updatedPosts.splice(fromIndex, 1);
+      updatedPosts.splice(toIndex, 0, movedPost);
+      return updatedPosts;
+    });
+  };
+
   const canvasStyle = {
-    background: '#f0f0f0', // 은은한 회색 배경
+    background: '#f0f0f0',
+  };
+
+  const canDrag = !studentSession;
+
+  const ResetModal = ({ isOpen, onClose, onConfirm }) => {
+    if (!isOpen) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div className="bg-white p-6 rounded-lg max-w-[300px] w-full">
+          <h2 className="text-xl font-bold mb-4">캔버스 리셋</h2>
+          <p className="text-gray-700 mb-4">캔버스를 리셋하시겠습니까?</p>
+          <div className="flex justify-end space-x-2">
+            <button
+              onClick={onClose}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition duration-300"
+            >
+              취소
+            </button>
+            <button
+              onClick={onConfirm}
+              className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition duration-300"
+            >
+              확인
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div className="mt-20 flex flex-col items-center w-full h-full">
-      <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ 아이디어 캔버스 AI</h1>
-      <div className="text-sm font-normal text-center mb-4 text-gray-400">ChatGPT-4o 기반</div>
-      <div className="relative w-full h-full flex justify-center items-start mt-6">
-        <div className="min-h-60vh relative rounded-lg shadow-lg border border-gray-300 flex flex-wrap content-start p-6"
-             style={{ ...canvasStyle, width: 'calc(100% - 80px)', height: '100%', overflow: 'auto' }}>
-          {posts.map((post, index) => (
-            <Post key={index} post={post} onEdit={handleEditPost} />
-          ))}
-        </div>
-        <div className="absolute top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-4 bg-white p-3 rounded-lg shadow-md"
-             style={{ right: '-35px' }}>
-          <button
-            onClick={() => setIsPostModalOpen(true)}
-            className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
-            title="포스트 추가"
-          >
-            <FaPlus />
-          </button>
-          <button
-            onClick={fetchPosts}
-            className={`text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300 ${isLoading ? 'animate-spin' : ''}`}
-            title="새로고침"
-            disabled={isLoading}
-          >
-            <FaSync />
-          </button>
-          {!studentSession && (
+    <DndProvider backend={HTML5Backend}>
+      <div className="mt-20 flex flex-col items-center w-full h-full">
+        <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ 아이디어 캔버스 AI</h1>
+        <div className="text-sm font-normal text-center mb-4 text-gray-400">ChatGPT-4o 기반</div>
+        <div className="relative w-full h-full flex justify-center items-start mt-6">
+          <div className="min-h-60vh relative rounded-lg shadow-lg border border-gray-300 flex flex-wrap content-start p-6"
+               style={{ ...canvasStyle, width: 'calc(100% - 80px)', height: '100%', overflow: 'auto' }}>
+            {posts.map((post, index) => (
+              <Post key={index} post={post} onEdit={handleEditPost} movePost={movePost} index={index} canDrag={canDrag} />
+            ))}
+          </div>
+          <div className="absolute top-1/2 transform -translate-y-1/2 flex flex-col items-center space-y-4 bg-white p-3 rounded-lg shadow-md"
+               style={{ right: '-35px' }}>
             <button
-              onClick={() => setIsChatPromptOpen(!isChatPromptOpen)}
+              onClick={() => setIsPostModalOpen(true)}
               className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
-              title="AI Chat"
+              title="포스트 추가"
             >
-              <FaComments />
+              <FaPlus />
             </button>
-          )}
+            <button
+              onClick={fetchPosts}
+              className={`text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300 ${isRefreshing ? 'animate-spin' : ''}`}
+              title="새로고침"
+              disabled={isRefreshing}
+            >
+              <FaSync />
+            </button>
+            {!studentSession && (
+              <button
+                onClick={() => setIsChatPromptOpen(!isChatPromptOpen)}
+                className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
+                title="AI Chat"
+              >
+                <FaComments />
+              </button>
+            )}
+            <button
+              onClick={() => setIsResetModalOpen(true)}
+              className="text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300"
+              title="캔버스 리셋"
+            >
+              <FaTrash />
+            </button>
+          </div>
         </div>
-      </div>
 
-      <PostModal
-        isOpen={isPostModalOpen}
-        onClose={() => setIsPostModalOpen(false)}
-        onSave={handleAddPost}
-      />
-
-      <PostModal
-        isOpen={isEditPostModalOpen}
-        onClose={() => {
-          setIsEditPostModalOpen(false);
-          setEditPost(null);
-        }}
-        onSave={handleSaveEditedPost}
-        onDelete={handleDeletePost}
-        initialPost={editPost}
-        isEditing={true}
-      />
-
-      {!studentSession && (
-        <ChatPrompt
-          isOpen={isChatPromptOpen}
-          onClose={() => setIsChatPromptOpen(false)}
-          onSendMessage={onSendMessage}
-          messages={messages}
-          currentMessage={currentMessage}
-          setCurrentMessage={setCurrentMessage}
-          isLoading={isLoading}
+        <PostModal
+          isOpen={isPostModalOpen}
+          onClose={() => setIsPostModalOpen(false)}
+          onSave={handleAddPost}
         />
-      )}
-    </div>
+
+        <PostModal
+          isOpen={isEditPostModalOpen}
+          onClose={() => {
+            setIsEditPostModalOpen(false);
+            setEditPost(null);
+          }}
+          onSave={handleSaveEditedPost}
+          onDelete={handleDeletePost}
+          initialPost={editPost}
+          isEditing={true}
+        />
+
+        {!studentSession && (
+          <ChatPrompt
+            isOpen={isChatPromptOpen}
+            onClose={() => setIsChatPromptOpen(false)}
+            onSendMessage={onSendMessage}
+            messages={messages}
+            currentMessage={currentMessage}
+            setCurrentMessage={setCurrentMessage}
+            isLoading={isLoading}
+          />
+        )}
+
+        <ResetModal
+          isOpen={isResetModalOpen}
+          onClose={() => setIsResetModalOpen(false)}
+          onConfirm={handleDeleteAllPosts}
+        />
+      </div>
+    </DndProvider>
   );
 };
 

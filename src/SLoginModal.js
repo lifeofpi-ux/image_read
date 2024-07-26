@@ -15,7 +15,6 @@ function SLoginModal({ onClose, onLoginSuccess }) {
     setError(null);
 
     try {
-      console.log("로그인 시도:", teacherNickname, classCode);
 
       // 교사의 닉네임과 학급 코드로 사용자를 찾습니다.
       const q = query(
@@ -25,7 +24,6 @@ function SLoginModal({ onClose, onLoginSuccess }) {
       );
       const querySnapshot = await getDocs(q);
 
-      console.log("쿼리 결과:", querySnapshot.size);
 
       if (querySnapshot.empty) {
         throw new Error("선생님 닉네임 또는 학급 코드가 일치하지 않습니다.");
@@ -34,7 +32,6 @@ function SLoginModal({ onClose, onLoginSuccess }) {
       const teacherDoc = querySnapshot.docs[0];
       const teacherData = teacherDoc.data();
 
-      console.log("선생님 데이터:", teacherData);
 
       // 필요한 데이터가 모두 있는지 확인
       if (!teacherData.nickname || !teacherData.classCode) {
@@ -48,7 +45,6 @@ function SLoginModal({ onClose, onLoginSuccess }) {
         classCode: teacherData.classCode
       }), { expires: 1 }); // 1일 후 만료
 
-      console.log("로그인 성공");
       if (typeof onLoginSuccess === 'function') {
         onLoginSuccess(teacherData);
       } else {

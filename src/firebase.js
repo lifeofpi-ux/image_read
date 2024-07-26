@@ -11,8 +11,6 @@ const firebaseConfig = {
   appId: process.env.REACT_APP_FIREBASE_APP_ID
 };
 
-// Firebase 구성이 제대로 로드되었는지 확인
-console.log('Firebase Config:', firebaseConfig);
 
 // 필수 환경 변수가 모두 설정되었는지 확인
 const requiredEnvVars = [
