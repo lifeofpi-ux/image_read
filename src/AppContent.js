@@ -291,13 +291,13 @@ function AppContent() {
               <NavigationButton to="/conv-ai" text="💬 AI 채팅 도우미" />
             </li>
             <li className="mb-1">
-              <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" />
-            </li>
-            <li className="mb-1">
               <NavigationButton to="/idea-canvas" text="🎨 아이디어 캔버스 AI" />
             </li>
             <li className="mb-1">
               <NavigationButton to="/tpack-lesson" text="📚 TPACK 수업 설계" />
+            </li>
+            <li className="mb-1">
+              <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" />
             </li>
           </ul>
           <div className="mt-auto text-sm font-bold text-gray-400 ml-4">

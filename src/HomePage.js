@@ -136,10 +136,10 @@ const HomePage = ({
         </div>
 
         <div 
-          onClick={() => handleCardClick("/tpack-design")}
+          onClick={() => handleCardClick("/tpack-lesson")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
-          <div className="bg-yellow-500 p-4">
+          <div className="bg-[#ffdf14] p-4">
             <div className="text-white text-2xl mb-2">📚</div>
           </div>
           <div className="p-4">
@@ -152,7 +152,7 @@ const HomePage = ({
           onClick={() => handleCardClick("/student-evaluation")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
-          <div className="bg-red-500 p-4">
+          <div className="bg-[#ff7070] p-4">
             <div className="text-white text-2xl mb-2">📊</div>
           </div>
           <div className="p-4">
