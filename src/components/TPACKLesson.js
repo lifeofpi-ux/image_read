@@ -278,7 +278,7 @@ const TPACKLesson = () => {
                     }}
                   >
                     <div className="row-number bg-teal-500 text-white rounded-full w-8 h-8 flex justify-center items-center text-xl">{index + 1}</div>
-                    <div className="row-description bg-white bg-opacity-60 rounded-lg p-2 text-black">{row.description}</div>
+                    <div className="row-description bg-white bg-opacity-60 rounded-lg p-2 text-black" style={{ whiteSpace: 'break-spaces' }}>{row.description}</div>
                   </div>
                   <div className="card-row flex items-center gap-5">
                     {cards
