@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { collection, addDoc, serverTimestamp, query, orderBy, getDocs, doc, updateDoc, deleteDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, orderBy, doc, updateDoc, deleteDoc, where, writeBatch, onSnapshot, getDocs } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import './App.css';
 import './custom.css';
 import PostModal from './PostModal';
-import { FaEdit, FaExpand, FaPlus, FaSync, FaComments, FaTrash } from 'react-icons/fa'; // FaTrash 아이콘 추가
+import { FaEdit, FaExpand, FaPlus, FaSync, FaComments, FaTrash } from 'react-icons/fa';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -260,7 +260,6 @@ const ChatPrompt = ({ isOpen, onClose, onSendMessage, messages, currentMessage, 
             </svg>
           </button>
         </div>
-       
       </div>
     </div>
   );
@@ -282,28 +281,40 @@ const IdeaCanvasAI = () => {
     return sessionData ? JSON.parse(sessionData) : null;
   });
 
-  const fetchPosts = useCallback(async () => {
-    setIsRefreshing(true);
+  const unsubscribeRef = useRef();
+
+  const setupRealtimeListener = useCallback(() => {
     const user = auth.currentUser;
     const session = studentSession;
     const teacherId = session?.teacherId || user?.uid;
 
     if (!teacherId) {
-      setIsRefreshing(false);
+      console.error('No teacherId available');
       return;
     }
 
     const postsRef = collection(db, "Posts");
     const q = query(postsRef, where("teacherId", "==", teacherId), orderBy("createdAt", "asc"));
-    const querySnapshot = await getDocs(q);
-    const postList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setPosts(postList);
-    setIsRefreshing(false);
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const postList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setPosts(postList);
+    }, (error) => {
+      console.error("Error fetching posts:", error);
+    });
+
+    unsubscribeRef.current = unsubscribe;
   }, [studentSession]);
 
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    setupRealtimeListener();
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, [setupRealtimeListener]);
 
   const handleAddPost = async (post) => {
     const newPost = {
@@ -312,8 +323,7 @@ const IdeaCanvasAI = () => {
       teacherId: auth.currentUser?.uid || studentSession?.teacherId,
     };
     try {
-      const docRef = await addDoc(collection(db, "Posts"), newPost);
-      setPosts(prevPosts => [...prevPosts, { ...newPost, id: docRef.id }]);
+      await addDoc(collection(db, "Posts"), newPost);
     } catch (error) {
       console.error('Error adding post: ', error);
     }
@@ -341,7 +351,6 @@ const IdeaCanvasAI = () => {
     const postRef = doc(db, "Posts", editedPost.id);
     try {
       await updateDoc(postRef, { ...editedPost, updatedAt: serverTimestamp() });
-      setPosts(prevPosts => prevPosts.map(post => post.id === editedPost.id ? editedPost : post));
       setIsEditPostModalOpen(false);
       setEditPost(null);
     } catch (error) {
@@ -358,7 +367,6 @@ const IdeaCanvasAI = () => {
 
     try {
       await deleteDoc(doc(db, "Posts", post.id));
-      setPosts(prevPosts => prevPosts.filter(p => p.id !== post.id));
     } catch (error) {
       console.error('Error deleting post:', error);
       alert('포스트 삭제 중 오류가 발생했습니다.');
@@ -384,7 +392,6 @@ const IdeaCanvasAI = () => {
       });
 
       await batch.commit();
-      setPosts([]);
       setIsResetModalOpen(false);
     } catch (error) {
       console.error('Error deleting all posts:', error);
@@ -505,14 +512,7 @@ const IdeaCanvasAI = () => {
             >
               <FaPlus />
             </button>
-            <button
-              onClick={fetchPosts}
-              className={`text-gray-600 p-2 rounded-full hover:bg-gray-100 transition duration-300 ${isRefreshing ? 'animate-spin' : ''}`}
-              title="새로고침"
-              disabled={isRefreshing}
-            >
-              <FaSync />
-            </button>
+          
             {!studentSession && (
               <>
                 <button
