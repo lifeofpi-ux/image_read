@@ -6,7 +6,7 @@ import axios from 'axios';
 import './App.css';
 import './custom.css';
 import PostModal from './PostModal';
-import { FaEdit, FaExpand, FaPlus, FaSync, FaComments, FaTrash } from 'react-icons/fa';
+import { FaEdit, FaExpand, FaPlus, FaComments, FaTrash } from 'react-icons/fa';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
@@ -274,7 +274,6 @@ const IdeaCanvasAI = () => {
   const [messages, setMessages] = useState([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [studentSession] = useState(() => {
     const sessionData = Cookies.get('studentSession');
