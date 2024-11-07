@@ -12,3 +12,10 @@
 [build]
   command = "npm install"
   functions = "functions"
+
+
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Cache-Control = "no-cache"
+    Pragma = "no-cache"
