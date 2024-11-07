@@ -22,7 +22,7 @@ async function getApiKey(userId, teacherId) {
   let useDefaultKey = false;
 
   // 먼저 관리자 설정을 확인
-  const adminDocRef = db.collection('users').doc('indend007@gmail.com');
+  const adminDocRef = db.collection('users').doc(process.env.ADMIN_EMAIL);
   const adminDoc = await adminDocRef.get();
   const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
   

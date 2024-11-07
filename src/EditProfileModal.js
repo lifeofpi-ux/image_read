@@ -123,12 +123,12 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
       };
 
       // 관리자 계정인 경우 allowDefaultKey 포함
-      if (user.email === 'indend007@gmail.com') {
+      if (user.email === process.env.REACT_APP_ADMIN_EMAIL) {
         console.log('관리자 키 사용 허용 설정값:', formData.allowDefaultKey);
         updatedData.allowDefaultKey = formData.allowDefaultKey;
         
         // 관리자 문서 참조
-        const adminDocRef = doc(db, "users", 'indend007@gmail.com');
+        const adminDocRef = doc(db, "users", process.env.REACT_APP_ADMIN_EMAIL);
         
         try {
           // 문서가 존재하는지 확인
@@ -138,7 +138,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
             // 문서가 없으면 새로 생성
             await setDoc(adminDocRef, {
               allowDefaultKey: formData.allowDefaultKey,
-              email: 'indend007@gmail.com',
+              email: process.env.REACT_APP_ADMIN_EMAIL,
               nickname: formData.nickname,
               role: 'admin'
             });
@@ -283,7 +283,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
           </div>
           
           {/* 관리자 계정일 경우에만 표시 */}
-          {user?.email === 'indend007@gmail.com' && (
+          {user?.email === process.env.REACT_APP_ADMIN_EMAIL && (
             <div className="flex items-center justify-between mt-4 mb-4 p-4 bg-gray-50 rounded-lg">
               <label className="block text-sm font-medium text-gray-700">관리자 키 사용 허용</label>
               <button
