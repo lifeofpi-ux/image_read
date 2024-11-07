@@ -17,6 +17,61 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 
+async function getApiKey(userId, teacherId) {
+  let openaiApiKey = process.env.OPENAI_API_KEY;
+  let useDefaultKey = false;
+
+  // 관리자 설정 확인
+  const adminDocRef = db.collection('users').doc('indend007@gmail.com');
+  const adminDoc = await adminDocRef.get();
+  const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
+  
+  console.log('🔑 관리자 키 사용 허용 상태:', allowDefaultKey);
+
+  if (teacherId) {
+    const teacherDocRef = db.collection('users').doc(teacherId.trim());
+    const teacherDoc = await teacherDocRef.get();
+
+    if (teacherDoc.exists) {
+      const teacherData = teacherDoc.data();
+      if (teacherData.openaiKey) {
+        console.log('👩‍🏫 교사 개인 키 사용');
+        openaiApiKey = teacherData.openaiKey;
+      } else {
+        console.log('🔄 기본 키 사용 시도');
+        useDefaultKey = true;
+      }
+    }
+  } else if (userId) {
+    const userDocRef = db.collection('users').doc(userId.trim());
+    const userDoc = await userDocRef.get();
+
+    if (userDoc.exists) {
+      const userData = userDoc.data();
+      if (userData.openaiKey) {
+        console.log('👤 사용자 개인 키 사용');
+        openaiApiKey = userData.openaiKey;
+      } else {
+        console.log('🔄 기본 키 사용 시도');
+        useDefaultKey = true;
+      }
+    }
+  }
+
+  if (useDefaultKey && !allowDefaultKey) {
+    console.error('❌ 기본 키 사용이 허용되지 않음');
+    throw new Error('OpenAI API 키가 필요합니다. 프로필 설정에서 API 키를 입력해주세요.');
+  }
+
+  if (!openaiApiKey) {
+    console.error('❌ API 키를 찾을 수 없음');
+    throw new Error('API key not found');
+  }
+
+  console.log('✅ API 키 사용 준비 완료');
+  return openaiApiKey;
+}
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -36,37 +91,8 @@ exports.handler = async function (event, context) {
       };
     }
 
-    let openaiApiKey = process.env.OPENAI_API_KEY; // 기본 환경변수에 설정된 키
-
-    // teacherId가 있는 경우 해당 선생님의 OpenAI API 키를 가져옴
-    if (teacherId) {
-      const teacherDocRef = db.collection('users').doc(teacherId.trim());
-      const teacherDoc = await teacherDocRef.get();
-
-      if (teacherDoc.exists) {
-        const teacherData = teacherDoc.data();
-        if (teacherData.openaiKey) {
-          openaiApiKey = teacherData.openaiKey;
-        }
-      } else {
-        console.error('Teacher document not found:', teacherId);
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'Teacher not found', teacherId }),
-        };
-      }
-    } else {
-      // Firestore에서 사용자의 OpenAI API 키 가져오기
-      const userDocRef = db.collection('users').doc(userId.trim());
-      const userDoc = await userDocRef.get();
-
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        if (userData.openaiKey) {
-          openaiApiKey = userData.openaiKey;
-        }
-      }
-    }
+    // 기존 API 키 호출 부분을 새로운 getApiKey 함수로 교체
+    const openaiApiKey = await getApiKey(userId, teacherId);
 
     // OpenAI API 요청
     const response = await axios.post(
@@ -106,7 +132,7 @@ exports.handler = async function (event, context) {
     console.error('Error:', error.response ? error.response.data : error.message);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: '이미지 분석 중 오류가 발생했습니다.' }),
+      body: JSON.stringify({ error: '이미지 분석 중 오류가 발생했습니다.', details: error.message }),
     };
   }
 };

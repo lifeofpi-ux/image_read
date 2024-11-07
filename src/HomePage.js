@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from './firebase';
 const HomePage = ({ 
   user, 
   studentSession,
@@ -14,20 +15,18 @@ const HomePage = ({
   const navigate = useNavigate();
   const [isLoginConfirmModalOpen, setIsLoginConfirmModalOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState('');
-
+  const [adminKeyAllowed, setAdminKeyAllowed] = useState(null);
   useEffect(() => {
     if ((user || studentSession) && typeof setShowLoginSuccess === 'function') {
       setShowLoginSuccess(false);
     }
   }, [user, studentSession, setShowLoginSuccess]);
-
   useEffect(() => {
     if ((user || studentSession) && selectedPath) {
       navigate(selectedPath);
       setSelectedPath('');
     }
   }, [user, studentSession, selectedPath, navigate]);
-
   const handleCardClick = (path) => {
     if (user || studentSession) {
       navigate(path);
@@ -36,7 +35,6 @@ const HomePage = ({
       setIsLoginConfirmModalOpen(true);
     }
   };
-
   const handleLoginSelection = (isTeacher) => {
     setIsLoginConfirmModalOpen(false);
     if (isTeacher) {
@@ -47,7 +45,6 @@ const HomePage = ({
     setRedirectPath(selectedPath);
     setLoginSuccessInfo(prev => ({ ...prev, redirectPath: selectedPath }));
   };
-
   const LoginConfirmModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-xs w-full">
@@ -76,12 +73,25 @@ const HomePage = ({
       </div>
     </div>
   );
-
+  const checkAdminKeyStatus = useCallback(async () => {
+    try {
+      const adminDocRef = doc(db, "users", 'indend007@gmail.com');
+      const adminDoc = await getDoc(adminDocRef);
+      const allowDefaultKey = adminDoc.exists() && adminDoc.data().allowDefaultKey;
+      setAdminKeyAllowed(allowDefaultKey);
+      console.log('🔑 관리자 키 사용 허용 상태 (HomePage):', allowDefaultKey);
+    } catch (error) {
+      console.error("Error checking admin key status:", error);
+      setAdminKeyAllowed(false);
+    }
+  }, []);
+  useEffect(() => {
+    checkAdminKeyStatus();
+  }, [checkAdminKeyStatus]);
   return (
     <div className="flex flex-col items-center justify-center min-h-custom">
       <h1 className="text-4xl font-bold mb-1 text-gray-800">T.R.I.P.O.D.</h1>
       <h1 className="text-sm font-bold mb-20 text-gray-400">수업, 평가, 교육 그리고 사람들</h1>
-      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl w-300 px-4 mb-20">
         <div 
           onClick={() => handleCardClick("/rubric-report")}
@@ -95,7 +105,6 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI를 활용한 루브릭 기반 평가 리포트 생성</p>
           </div>
         </div>
-
         <div 
           onClick={() => handleCardClick("/image-analysis")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
@@ -108,7 +117,6 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI를 이용한 이미지 기반 학습 결과물 분석</p>
           </div>
         </div>
-
         <div 
           onClick={() => handleCardClick("/conv-ai")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
@@ -121,7 +129,6 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI와의 대화를 통한 학습 지원 및 질문 해결</p>
           </div>
         </div>
-
         <div 
           onClick={() => handleCardClick("/idea-canvas")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
@@ -134,7 +141,6 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI Prompt를 활용한 포스트 아이디어 평가</p>
           </div>
         </div>
-
         <div 
           onClick={() => handleCardClick("/tpack-lesson")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
@@ -147,7 +153,6 @@ const HomePage = ({
             <p className="text-sm text-gray-600">TPACK 모델을 활용한 교수학습 설계 도구</p>
           </div>
         </div>
-
         <div 
           onClick={() => handleCardClick("/student-evaluation")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
@@ -160,9 +165,20 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI를 활용한 학생 성적 평가 및 피드백 생성</p>
           </div>
         </div>
-        
       </div>
-
+      <div className="max-w-xl w-full mt-8 mb-20 text-center">
+        <div className={`text-sm font-medium ${
+          adminKeyAllowed ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+        } p-2 rounded-lg border ${
+          adminKeyAllowed ? 'border-green-200' : 'border-red-200'
+        } shadow-sm`}>
+          *AI 도구 모드 👉 {
+            adminKeyAllowed 
+              ? '시스템 AI API Key를 활용할 수 있습니다.' 
+              : '시스템 AI API Key를 활용할 수 없습니다. 개인 키를 추가해주세요.'
+          }
+        </div>
+      </div>
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
         <div className="flex justify-center items-center space-x-6">
           <a 
@@ -181,10 +197,8 @@ const HomePage = ({
           </button>
         </div>
       </div>
-
       {isLoginConfirmModalOpen && <LoginConfirmModal />}
     </div>
   );
 };
-
 export default HomePage;

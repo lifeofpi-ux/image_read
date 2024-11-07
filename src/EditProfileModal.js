@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { updateProfile, deleteUser, sendPasswordResetEmail } from 'firebase/auth';
-import { updateDoc, doc, collection, query, where, getDocs, deleteDoc, getDoc } from 'firebase/firestore';
+import { updateDoc, doc, collection, query, where, getDocs, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
 
 function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
@@ -10,6 +10,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
     classCode: '',
     openaiKey: '',
     deploymentCode: '',
+    allowDefaultKey: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -29,6 +30,7 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
               classCode: userData.classCode || '',
               openaiKey: userData.openaiKey || '',
               deploymentCode: userData.deploymentCode || '',
+              allowDefaultKey: userData.allowDefaultKey || false,
             });
           }
         } catch (error) {
@@ -114,10 +116,49 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
 
       // Update user data in Firestore
       const updatedData = {
-        ...formData,
-        openaiKey: formData.openaiKey || '' // API 키가 비어있어도 저장
+        nickname: formData.nickname,
+        classCode: formData.classCode,
+        openaiKey: formData.openaiKey || '',
+        deploymentCode: formData.deploymentCode,
       };
-      await updateDoc(doc(db, "users", user.uid), updatedData);
+
+      // 관리자 계정인 경우 allowDefaultKey 포함
+      if (user.email === 'indend007@gmail.com') {
+        console.log('관리자 키 사용 허용 설정값:', formData.allowDefaultKey);
+        updatedData.allowDefaultKey = formData.allowDefaultKey;
+        
+        // 관리자 문서 참조
+        const adminDocRef = doc(db, "users", 'indend007@gmail.com');
+        
+        try {
+          // 문서가 존재하는지 확인
+          const adminDoc = await getDoc(adminDocRef);
+          
+          if (!adminDoc.exists()) {
+            // 문서가 없으면 새로 생성
+            await setDoc(adminDocRef, {
+              allowDefaultKey: formData.allowDefaultKey,
+              email: 'indend007@gmail.com',
+              nickname: formData.nickname,
+              role: 'admin'
+            });
+            console.log('관리자 문서 생성됨');
+          } else {
+            // 문서가 있으면 업데이트
+            await updateDoc(adminDocRef, {
+              allowDefaultKey: formData.allowDefaultKey
+            });
+            console.log('관리자 문서 업데이트됨');
+          }
+        } catch (error) {
+          console.error("관리자 문서 처리 중 오류:", error);
+          throw error;
+        }
+      }
+
+      // 현재 사용자의 문서 업데이트
+      const userDocRef = doc(db, "users", user.uid);
+      await updateDoc(userDocRef, updatedData);
 
       const updatedUser = { ...user, ...updatedData };
       onUpdate(updatedUser);
@@ -240,6 +281,35 @@ function EditProfileModal({ user, onClose, onUpdate, onDelete }) {
               autoComplete="off"
             />
           </div>
+          
+          {/* 관리자 계정일 경우에만 표시 */}
+          {user?.email === 'indend007@gmail.com' && (
+            <div className="flex items-center justify-between mt-4 mb-4 p-4 bg-gray-50 rounded-lg">
+              <label className="block text-sm font-medium text-gray-700">관리자 키 사용 허용</label>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={formData.allowDefaultKey}
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    allowDefaultKey: !prev.allowDefaultKey
+                  }));
+                  console.log("Toggle changed:", !formData.allowDefaultKey);
+                }}
+                className={`${
+                  formData.allowDefaultKey ? 'bg-blue-600' : 'bg-gray-200'
+                } relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`${
+                    formData.allowDefaultKey ? 'translate-x-5' : 'translate-x-0'
+                  } pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out`}
+                />
+              </button>
+            </div>
+          )}
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button
             type="submit"

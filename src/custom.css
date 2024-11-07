@@ -1,42 +1,106 @@
-/* custom.css */
-.cropper-drag-box {
-    border-radius: 10px;
-}
-
-.cropper-bg {
-    border-radius: 10px;
-}
-
-.focus-border:focus {
-    border: 3px solid #4A90E2;  /* 포커스 시 적용할 테두리 스타일 */
-    outline: none;
-  }
-
-.fix {
-    position: fixed;
-    width: 100%;
-    z-index: 1;
-}
-
-.min-h-custom {
-    min-height: calc(100vh - 72px)
-}
-
-.highlight-effect {
-    position: relative;
-    display: inline-block;
-  }
-  
-  .highlight-effect::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 0.2em;
-    background-color: pink;
-    z-index: -1;
-  }
-  
-
-
+/* custom.css */
+
+.cropper-drag-box {
+
+    border-radius: 10px;
+
+}
+
+
+
+.cropper-bg {
+
+    border-radius: 10px;
+
+}
+
+
+
+.focus-border:focus {
+
+    border: 3px solid #4A90E2;  /* 포커스 시 적용할 테두리 스타일 */
+
+    outline: none;
+
+  }
+
+
+
+.fix {
+
+    position: fixed;
+
+    width: 100%;
+
+    z-index: 1;
+
+}
+
+
+
+.min-h-custom {
+
+    min-height: calc(100vh - 72px)
+
+}
+
+
+
+.highlight-effect {
+
+    position: relative;
+
+    display: inline-block;
+
+  }
+
+  
+
+  .highlight-effect::after {
+
+    content: '';
+
+    position: absolute;
+
+    left: 0;
+
+    right: 0;
+
+    bottom: 0;
+
+    height: 0.2em;
+
+    background-color: pink;
+
+    z-index: -1;
+
+  }
+
+  
+
+  /* 토글 버튼 애니메이션 */
+
+  @keyframes toggleOn {
+
+    0% { transform: translateX(0); }
+
+    100% { transform: translateX(20px); }
+
+  }
+
+
+
+  @keyframes toggleOff {
+
+    0% { transform: translateX(20px); }
+
+    100% { transform: translateX(0); }
+
+  }
+
+
+
+
+
+
+

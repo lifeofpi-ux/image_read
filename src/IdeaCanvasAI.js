@@ -432,7 +432,7 @@ const IdeaCanvasAI = () => {
     } catch (error) {
       console.error('Backend API Error:', error);
       
-      let errorMessage = "AI가 힘들어하고 있어요. 질문을 간결하게 작성해 주세요.";
+      let errorMessage = "AI가 힘들어하고 있어요. 질문을 간결하게 작성해 주세요. 혹은 API 키를 확인해 주세요.";
       
       if (error.response && error.response.status === 500) {
         const aiErrorMessage = {
