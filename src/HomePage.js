@@ -248,7 +248,7 @@ const HomePage = ({
 
     <div className="flex flex-col items-center justify-center min-h-custom">
 
-      <h1 className="text-4xl font-bold mb-1 text-gray-800">T.R.I.P.O.D.New</h1>
+      <h1 className="text-4xl font-bold mb-1 text-gray-800">T.R.I.P.O.D.</h1>
 
       <h1 className="text-sm font-bold mb-20 text-gray-400">수업, 평가, 교육 그리고 사람들</h1>
 
