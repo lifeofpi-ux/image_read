@@ -80,7 +80,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     if (tone === 'neisRecord') {
       tonePrompt = '보임. 씀. ~음. ~함. ~됨. 등의 자연스러운 형태로 문장이 끝나야 하며 현재 시제로 간결하게 문장을 작성해줘. 학생의 각 영역별 성취기준과 평가요소 문구를 적절히 학생의 평가 결과와 연관지어 평가 문장을 작성함. "우수를 받았음" 등과 같이 평가 결과 단어를 직접적으로 사용하면 안됨.';
     } else if (tone === 'growthFeedback') {
-      tonePrompt = '학생에게 긍정과 성찰을 돕는 격식있지만 따뜻하고 편안한 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 현재 시제로 문장을 작성해야 합니다.';
+      tonePrompt = '학생에게 긍정과 성찰을 돕는 격식있지만 따뜻하고 편안한 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 현재 시제로 문장을 작성해야 함.';
     }
 
     const response = await axios.post(
@@ -90,7 +90,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
         messages: [
           {
             role: "system",
-            content: `"학생들의 성취를 정확한 근거를 토대로 피드백하는 교사의 역할. 말투 지침: ${tonePrompt} 평가결과 문장은 학생 이름을 반드시 제외하고 ${wordCount}글자 정도의 피드백만 제시해야 함. `
+            content: `"학생들의 성취를 정확한 근거를 토대로 피드백하는 교사의 역할. 말투 지침: ${tonePrompt} 평가결과 문장은 학생 이름을 반드시 제외하고, 분량은 ${wordCount} 값을 확인하여 해당 값에 해당하는 글자 숫자를 반영한 피드백을 제시해야 함. `
           },
           {
             role: "user",
