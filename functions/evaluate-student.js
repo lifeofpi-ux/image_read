@@ -78,7 +78,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     
     let tonePrompt = '';
     if (tone === 'neisRecord') {
-      tonePrompt = '보임. 씀. ~음. ~함. ~됨. 등의 자연스러운 형태로 문장이 끝나야 하며, 간결하게 문장을 작성해줘. 학생의 각 영역별 성취기준과 평가요소 문구를 적절히 학생의 평가 결과와 연관지어 평가 문장을 작성함. "우수를 받았음" 등과 같이 평가 결과 단어를 직접적으로 사용하면 안됨.';
+      tonePrompt = '보임. 씀. ~음. ~함. ~됨. 등의 자연스러운 형태로 문장이 끝나야 하며, 문장 구조에 맞는 자연스러운 문장을 작성해줘. 학생의 각 영역별 성취기준과 평가요소 문구를 적절히 학생의 평가 결과와 연관지어 평가 문장을 작성함. "우수를 받았음" 등과 같이 평가 결과 단어를 직접적으로 사용하면 안됨.';
     } else if (tone === 'growthFeedback') {
       tonePrompt = '학생에게 긍정과 성찰을 돕는 평가 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 문장을 작성해야 함.';
     }
@@ -94,7 +94,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
           },
           {
             role: "user",
-            content: `Text: ${text}에서 ${studentIndex}번 학생의 번호, 이름, 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
+            content: `Text: ${text}에서 ${studentIndex}번 학생의 번호, 이름, 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
             영역별 평가요소에 해당하는 문장을 조합하여 학습 결과를 성찰하고 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
             영역명을 직접 적지는 말아줘.
 
