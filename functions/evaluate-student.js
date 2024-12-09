@@ -80,7 +80,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     if (tone === 'neisRecord') {
       tonePrompt = '보임. 씀. ~음. ~함. ~됨. 등의 자연스러운 형태로 문장이 끝나야 하며 현재 시제로 간결하게 문장을 작성해줘. 학생의 각 영역별 성취기준과 평가요소 문구를 적절히 학생의 평가 결과와 연관지어 평가 문장을 작성함. "우수를 받았음" 등과 같이 평가 결과 단어를 직접적으로 사용하면 안됨.';
     } else if (tone === 'growthFeedback') {
-      tonePrompt = '학생에게 긍정과 성찰을 돕는 격식있지만 따뜻하고 편안한 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 현재 시제로 문장을 작성해야 함.';
+      tonePrompt = '학생에게 긍정과 성찰을 돕는 평가 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 문장을 작성해야 함.';
     }
 
     const response = await axios.post(
