@@ -74,7 +74,7 @@ async function getApiKey(userId, teacherId) {
 
 async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
   try {
-    const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결���"`).join(", ");
+    const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
     let tonePrompt = '';
     if (tone === 'neisRecord') {
@@ -86,7 +86,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -95,7 +95,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
           {
             role: "user",
             content: `
-            #��본지침
+            #기본지침
             1. Text: ${text}에서 ${studentIndex}번 학생의 번호, 이름, 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
             2. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
             3. 영역명을 직접 적지는 말아줘.
