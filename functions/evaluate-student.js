@@ -74,7 +74,7 @@ async function getApiKey(userId, teacherId) {
 
 async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
   try {
-    const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 ��과"`).join(", ");
+    const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
     let tonePrompt = '';
     if (tone === 'neisRecord') {
@@ -117,7 +117,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             ***생활 주변의 자연물이나 인공물의 탐색을 통해 다양한 조형 요소를 찾아보고 그 특징을 이해한 후, 조형 요소의 특징이 잘 나타나도록 주제를 표현함. 미술 작가와 작품의 특징을 조사하고, 좋아하는 미술 작가와 작품을 친구들에게 소개함.
             ***감정이나 상태를 묻고 답하는 말을 할 수 있으며, 누구인지 묻고 답하는 말을 듣고 이해함. 운동에 관한 어구를 읽고 뜻을 이해할 수 있으며, 물건을 나타내는 낱말을 쓸 수 있음.
             ***지도의 기호, 축척, 등고선 등을 이해하여 지도에 나타난 지리 정보를 읽을 수 있음. 우리 지역의 문화유산을 조사하여 다양한 정보를 수집하고 소중히 보존해야 함을 인식함.
-            ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 ��작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
+            ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
 
             #최종 결과물 산출: 최종적으로 평가결과 문장에서 이름 및 주어를 제외한, 순수한 평가결과를 JSON 형식으로 반환해줘. 
             형식: { "학생데이터": { "번호": "1", "이름": "홍길동" , "평가점수": { ${evaluationAreas} } }, "평가결과": "..." }. 
