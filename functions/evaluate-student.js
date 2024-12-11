@@ -22,7 +22,7 @@ async function getApiKey(userId, teacherId) {
   let useDefaultKey = false;
 
   // 관리자 설정 확인
-  const adminDocRef = db.collection('users').doc(process.env.ADMIN_EMAIL);
+  const adminDocRef = db.collection('users').doc('indend007@gmail.com');
   const adminDoc = await adminDocRef.get();
   const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
   
@@ -74,7 +74,7 @@ async function getApiKey(userId, teacherId) {
 
 async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
   try {
-    const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
+    const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결���"`).join(", ");
     
     let tonePrompt = '';
     if (tone === 'neisRecord') {
@@ -95,13 +95,13 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
           {
             role: "user",
             content: `
-            #기본지침
+            #��본지침
             1. Text: ${text}에서 ${studentIndex}번 학생의 번호, 이름, 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
             2. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
             3. 영역명을 직접 적지는 말아줘.
             4. 초등학생과 중학생 수준의 학생이니 너무 어려운 표현은 사용되지 않아야해. 
             5. 너무 짧은 문장들은 1~2문장을 적절하게 연결해서 자연스럽게 만들어줘.
-            6. 평가 기준의 성취기준과 평가요소 문장을 재구성하여, 최대한 자연스러운 표현으로 만들어줘. 
+            6. 평가 기준 성취기준과 평가요소 문장을 재구성하여, 최대한 자연스러운 표현으로 만들어줘. 
            
  
             #평가문장 기본 생성원칙
@@ -115,7 +115,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             ***다양한 이야기를 통해 도덕적인 생활을 해야 하는 이유, 도덕 공부를 해야 하는 이유를 이해함. 예절의 중요성에 대해 알고, 대상과 상황에 따라 예절이 변화함을 이해하여 생활 속에서 꾸준히 실천함.
             ***몫이 한 자리 수인 두 자리 수 나누기 두 자리 수, 세 자리 수 나누기 두 자리 수의 계산 원리와 형식을 이해하고 정확히 몫을 구함. 막대그래프의 가로와 세로, 눈금 한 칸의 크기 등 기본 요소를 알고 잘 해석할 수 있음.
             ***생활 주변의 자연물이나 인공물의 탐색을 통해 다양한 조형 요소를 찾아보고 그 특징을 이해한 후, 조형 요소의 특징이 잘 나타나도록 주제를 표현함. 미술 작가와 작품의 특징을 조사하고, 좋아하는 미술 작가와 작품을 친구들에게 소개함.
-            ***감정이나 상태를 묻고 답하는 말을 할 수 있으며, 누구인지 묻고 답하는 말을 듣고 이해함. 운동에 관한 어구를 읽고 뜻을 이해할 수 있으며, 물건을 나타내는 낱말을 쓸 수 있음.
+            ***감정이나 상태를 묻고 답하는 말을 할 수 있으며, 누구인지 묻고 답하는 말을 듣고 이해함. 운동에 관한 구를 읽고 뜻을 이해할 수 있으며, 물건을 나타내는 낱말을 쓸 수 있음.
             ***지도의 기호, 축척, 등고선 등을 이해하여 지도에 나타난 지리 정보를 읽을 수 있음. 우리 지역의 문화유산을 조사하여 다양한 정보를 수집하고 소중히 보존해야 함을 인식함.
             ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
 
@@ -152,7 +152,16 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { evaluationCriteria, studentIndex, fullText, tone, wordCount, creativity } = JSON.parse(event.body);
+    const { 
+      evaluationCriteria, 
+      studentIndex, 
+      fullText, 
+      tone, 
+      wordCount, 
+      creativity,
+      userId,
+      teacherId
+    } = JSON.parse(event.body);
 
     if (!evaluationCriteria || studentIndex === undefined || !fullText || !tone || !wordCount || creativity === undefined) {
       return {
@@ -161,9 +170,17 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const openaiApiKey = process.env.OPENAI_API_KEY;
+    const openaiApiKey = await getApiKey(userId, teacherId);
 
-    const studentDataAndEvaluation = await extractAndEvaluateStudent(fullText, studentIndex, evaluationCriteria, tone, openaiApiKey, wordCount, creativity);
+    const studentDataAndEvaluation = await extractAndEvaluateStudent(
+      fullText,
+      studentIndex,
+      evaluationCriteria,
+      tone,
+      openaiApiKey,
+      wordCount,
+      creativity
+    );
 
     return {
         statusCode: 200,

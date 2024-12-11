@@ -314,6 +314,8 @@ function StudentEvaluationTool() {
           tone: selectedTone,
           wordCount,
           creativity,
+          userId: user?.uid,
+          teacherId: isTeacher ? user?.uid : null
         };
   
         const response = await fetch(EVALUATE_STUDENT_API_URL, {
@@ -346,7 +348,7 @@ function StudentEvaluationTool() {
       setIsEvaluating(false);
       setIsLoading(false);
     }
-  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount, creativity]);
+  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount, creativity, user, isTeacher]);
   
   const stopEvaluation = () => {
     if (abortControllerRef.current) {
