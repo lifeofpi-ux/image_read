@@ -125,7 +125,7 @@ const ToneSelector = ({ selectedTone, onToneChange }) => (
 const CreativitySlider = ({ creativity, onCreativityChange }) => (
   <div className="mt-4 w-full mb-4">
     <label htmlFor="creativity" className="block text-sm font-medium text-gray-700">
-      창의적 표��: {creativity === 0.1 ? '낮음' : creativity === 0.5 ? '보통' : creativity === 0.9 ? '높음' : `${creativity.toFixed(2)}`}
+      창의적 표현: {creativity === 0.1 ? '낮음' : creativity === 0.5 ? '보통' : creativity === 0.9 ? '높음' : `${creativity.toFixed(2)}`}
     </label>
     <input
       type="range"
@@ -314,8 +314,6 @@ function StudentEvaluationTool() {
           tone: selectedTone,
           wordCount,
           creativity,
-          userId: user ? user.uid : studentSession?.studentId,
-          teacherId: isTeacher ? user?.uid : studentSession?.teacherId
         };
   
         const response = await fetch(EVALUATE_STUDENT_API_URL, {
@@ -348,7 +346,7 @@ function StudentEvaluationTool() {
       setIsEvaluating(false);
       setIsLoading(false);
     }
-  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount, creativity, user, isTeacher, studentSession]);
+  }, [evaluationCriteria, totalStudents, fullText, selectedTone, isAuthenticated, wordCount, creativity]);
   
   const stopEvaluation = () => {
     if (abortControllerRef.current) {

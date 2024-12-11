@@ -152,54 +152,27 @@ exports.handler = async function (event, context) {
   }
 
   try {
-    const { 
-      evaluationCriteria, 
-      studentIndex, 
-      fullText, 
-      tone, 
-      wordCount, 
-      creativity,
-      userId,
-      teacherId
-    } = JSON.parse(event.body);
+    const { evaluationCriteria, studentIndex, fullText, tone, wordCount, creativity } = JSON.parse(event.body);
 
-    if (!evaluationCriteria || 
-        studentIndex === undefined || 
-        !fullText || 
-        !tone || 
-        !wordCount || 
-        creativity === undefined ||
-        (!userId && !teacherId)) {
+    if (!evaluationCriteria || studentIndex === undefined || !fullText || !tone || !wordCount || creativity === undefined) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: '잘못된 요청 데이터입니다.' }),
       };
     }
 
-    const openaiApiKey = await getApiKey(userId, teacherId);
+    const openaiApiKey = process.env.OPENAI_API_KEY;
 
-    const studentDataAndEvaluation = await extractAndEvaluateStudent(
-      fullText, 
-      studentIndex, 
-      evaluationCriteria, 
-      tone, 
-      openaiApiKey,
-      wordCount, 
-      creativity
-    );
+    const studentDataAndEvaluation = await extractAndEvaluateStudent(fullText, studentIndex, evaluationCriteria, tone, openaiApiKey, wordCount, creativity);
 
     return {
-      statusCode: 200,
-      body: JSON.stringify(studentDataAndEvaluation),
+        statusCode: 200,
+        body: JSON.stringify(studentDataAndEvaluation),
     };
   } catch (error) {
-    console.error('Error:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ 
-        error: '처리 중 오류가 발생했습니다. API KEY나 파일을 점검해주세요.', 
-        details: error.message 
-      }),
+      body: JSON.stringify({ error: '처리 중 오류가 발생했습니다. API KEY나 파일을 점검해주세요.', details: error.message }),
     };
   }
 };
