@@ -139,7 +139,7 @@ async function extractTotalStudents(text, userId, teacherId) {
           },
           {
             role: "user",
-            content: `텍스트에서 총 학생 수를 추출하여 JSON 형식으로 반환해주세요. 형식: { "총학생수": 숫자 }. Text: ${text}`
+            content: `텍스트에서 한글로 된 정상적인 학생 이름을 파악하여, 총 학생 수를 추출하여 JSON 형식으로 반환해주세요. 형식: { "총학생수": 숫자 }. Text: ${text}`
           }
         ],
         temperature: 0.7,
