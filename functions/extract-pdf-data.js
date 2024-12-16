@@ -73,7 +73,7 @@ async function getApiKey(userId, teacherId) {
   let openaiApiKey = process.env.OPENAI_API_KEY;
   let useDefaultKey = false;
 
-  // 관리자 설정 확인
+  // 관�자 설정 확인
   const adminDocRef = db.collection('users').doc('indend007@gmail.com');
   const adminDoc = await adminDocRef.get();
   const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
@@ -124,7 +124,7 @@ async function getApiKey(userId, teacherId) {
   return openaiApiKey;
 }
 
-async function extractStudentInfo(text, userId, teacherId) {
+async function extractTotalStudents(text, userId, teacherId) {
   try {
     const apiKey = await getApiKey(userId, teacherId);
     
@@ -135,26 +135,16 @@ async function extractStudentInfo(text, userId, teacherId) {
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that extracts student information from text. Always respond with valid JSON."
+            content: "You are a helpful assistant that extracts the total number of students from text. Always respond with valid JSON."
           },
           {
             role: "user",
             content: `
-            학생이름은 {김,이,최,백,우,유,윤,박,노,강} 등의 단어로 시작하는 3글자 가량의 독립된 문자열이며, 
-            텍스트에서 다음과 같이 번호(숫자)+빈칸+이름(문자열) 형태로 배열되어 있습니다. 
-            예시: 1 이상선, 2 김선태, ...
+            학생이름은 {김,이,최,백,우,유,윤,박,노,강} 등의 단어로 시작하는 3글자 가량의 독립된 문자열이며, 텍스트에서 다음과 같이 번호(숫자)+빈칸+이름(문자열) 형태로 배열되어 있습니다. 
+            1 이상선, 2 김선태, ...
+            제공한 텍스트 중 학생 목록에서 학생 이름을 파악하여, 정확한 전체 학생 수를 추출하여 JSON 형식으로 반환해주세요. 
 
-            제공한 텍스트에서 학생 목록의 번호, 이름을 추출하여 JSON 형식으로 반환해주세요.
-            형식: { 
-              "총학생수": 숫자,
-              "학생목록": [
-                {"번호": "1", "이름": "이상선"},
-                {"번호": "2", "이름": "김선태"},
-                ...
-              ]
-            }
-            
-            Text: ${text}
+            형식: { "총학생수": 숫자 }. Text: ${text}
             `
           }
         ],
@@ -174,10 +164,11 @@ async function extractStudentInfo(text, userId, teacherId) {
     const jsonEnd = content.lastIndexOf('}') + 1;
     const jsonString = content.substring(jsonStart, jsonEnd);
     
-    return JSON.parse(jsonString);
+    const result = JSON.parse(jsonString);
+    return result.총학생수;
   } catch (error) {
-    console.error("Error extracting student info:", error);
-    throw new Error('학생 정보 추출 중 오류가 발생했습니다: ' + error.message);
+    console.error("Error extracting total students:", error);
+    throw new Error('총 학생 수 추출 중 오류가 발생했습니다: ' + error.message);
   }
 }
 
@@ -227,14 +218,13 @@ exports.handler = async function (event, context) {
       const fullText = await extractTextFromPDF(pdfBuffer);
       
       const evaluationCriteria = await extractEvaluationCriteria(fullText, openaiApiKey);
-      const studentInfo = await extractStudentInfo(fullText, userId, teacherId);
+      const totalStudents = await extractTotalStudents(fullText, userId, teacherId);
 
       return {
         statusCode: 200,
         body: JSON.stringify({
           ...evaluationCriteria,
-          총학생수: studentInfo.총학생수,
-          학생목록: studentInfo.학생목록,
+          총학생수: totalStudents,
           fullText
         }),
       };
