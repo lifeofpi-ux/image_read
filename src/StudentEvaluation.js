@@ -331,9 +331,7 @@ function StudentEvaluationTool() {
         }
   
         const data = await response.json();
-        if (data) {
-          setStudentEvaluations(prev => [...prev, data]);
-        }
+        setStudentEvaluations(prev => [...prev, data]);
         setProgress(Math.round((i / totalStudents) * 100));
   
         if (signal.aborted) {
