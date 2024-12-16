@@ -43,7 +43,7 @@ async function extractEvaluationCriteria(text, apiKey) {
           },
           {
             role: "user",
-            content: `텍스트에서 영역과 성취기준, 평가요소를 추출하여 JSON 형식으로 반환해주세요. 형식: { "영역": [영역들], "성취기준": [성취기준들], "평가요소": [평가요소들] }. Text: ${text}`
+            content: `텍스트에서 영역과 성취기준, 평가요소를 추출하여 정확한 띄어쓰기를 반영하여, JSON 형식으로 반환해주세요. 형식: { "영역": [영역들], "성취기준": [성취기준들], "평가요소": [평가요소들] }. Text: ${text}`
           }
         ],
         temperature: 0.5,

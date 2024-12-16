@@ -524,14 +524,14 @@ function StudentEvaluationTool() {
                   <li className="mb-2 text-sm font-light">I. NEIS 학급담임-성적조회-교과별성적조회 탭</li>
                   <li className="mb-2 text-sm font-light">II. 옵션 중 한페이지로 출력 체크(중요) 후 조회 버튼</li>
                   <li className="mb-2 text-sm font-light">III. 뷰어 왼쪽 저장 아이콘 클릭 및 PDF 선택 후 저장</li>
-                
+                  </ol>
                 <h2 className="text-xl font-bold mt-4 mb-6 text-center">🔥전학생 존재시 필수 처리 사항</h2>
                   <ol className="list-inside text-left ">
                   <li className="mb-2 text-sm font-light">I. NEIS 학급담임-성적조회-교과별성적조회 탭</li>
                   <li className="mb-2 text-sm font-light">II. 옵션 중 한페이지로 출력 체크(중요) 후 조회 버튼</li>
                   <li className="mb-2 text-sm font-light">III. 뷰어 왼쪽 저장 아이콘 클릭 및 한글 파일 선택 후 저장</li>
                   <li className="mb-2 text-sm font-light">IV. 한글 문서에서 전학생 셀에 "전학생"이라고 입력 및 가상 데이터 임의 입력 후 PDF 저장</li>
-                </ol>
+                  </ol>
                 <button
                   onClick={() => setInfoModalIsOpen(false)}
                   className="px-4 py-2 font-semibold bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300 w-24 mt-6"
