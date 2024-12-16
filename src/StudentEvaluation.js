@@ -372,7 +372,7 @@ function StudentEvaluationTool() {
       borderRadius: '0.5rem',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
       maxWidth: '90%',
-      width: '360px',
+      width: '380px',
     },
     overlay: {
       backgroundColor: 'rgba(0, 0, 0, 0.75)',
