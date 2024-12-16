@@ -140,12 +140,15 @@ async function extractTotalStudents(text, userId, teacherId) {
           {
             role: "user",
             content: `
-            텍스트에서 한글로 된 정상적인 학생 이름을 파악하여, 총 학생 수를 추출하여 JSON 형식으로 반환해주세요. 
+            텍스트에서 한글로 된 정상적인 학생 이름을 파악하여, 문서에 포함된 정확한 전체 학생 수를 추출하여 JSON 형식으로 반환해주세요. 
+            학생이름에는 ":" 같은 특수기호가 포함되어 있지 않습니다. 
+            이름은 {번호} {이름} {평가점수} 형태의 텍스트 구조에 포함되어 있어서 찾기가 쉽습니다.
+
             형식: { "총학생수": 숫자 }. Text: ${text}
             `
           }
         ],
-        temperature: 0.7,
+        temperature: 0.5,
         max_tokens: 1000
       },
       {
