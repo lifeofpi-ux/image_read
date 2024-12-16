@@ -74,6 +74,14 @@ async function getApiKey(userId, teacherId) {
 
 async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
   try {
+    // 1. 먼저 해당 번호의 학생이 존재하는지 확인
+    const studentPattern = new RegExp(`${studentIndex}\\s+[가-힣]{2,3}[,\\s]`, 'g');
+    const studentExists = studentPattern.test(text);
+
+    if (!studentExists) {
+      throw new Error(`${studentIndex}번 학생이 존재하지 않습니다.`);
+    }
+
     const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
     let tonePrompt = '';
@@ -96,7 +104,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             role: "user",
             content: `
             #기본지침
-            1. Text: ${text}에서 학생 이름, 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
+            1. Text: ${text}에서 ${studentIndex}번 학생의 이름과 평가점수를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
             2. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
             3. 영역명을 직접 적지는 말아줘.
             4. 초등학생과 중학생 수준의 학생이니 너무 어려운 표현은 사용되지 않아야해. 
@@ -106,7 +114,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
  
             #평가문장 기본 생성원칙
             ***모든 영역에서 '우수'를 받은 학생의 경우, '~ 우수함., ~ 돋보임., ~ 잘 설명함.' 등의 표현을 무작위로 피드백 문장에 섞어서 학생이 잘하는 부분을 칭찬하는 긍정적인 성찰의 내용도 한문장 정도 함께 반영해줘. 모든 영역이 우수하더라도 추가적인 피드백 문장이 없을 수도 있어. 랜덤하게 추가해줘. 
-            ***평가 영역 점수가 '보통'인 경우 '같은 작품에 대한 생각이나 느낌이 서로 다를 수 있다는 것을 이해하고 자신의 생각이나 느낌을 다양한 방법으로 표현함.'와 같이 특별한 수식어 없이 일반적인 수행 능력에 대한 문장으로 표현해줘.     
+            ***평가 영역 점수가 '보통'인 경우 '같은 ���품에 대한 생각이나 느낌이 서로 다를 수 있다는 것을 이해하고 자신의 생각이나 느낌을 다양한 방법으로 표현함.'와 같이 특별한 수식어 없이 일반적인 수행 능력에 대한 문장으로 표현해줘.     
             ***전반적으로 많은 영역의 점수가 낮은 학생의 경우, 부족한 부분에 대한 내용을 보충하여 (~한다면, 더 나은 발전이 있을 것으로 기대됨.) 등과 같은 앞으로의 발전을 위한 피드백 문장을 추가해줘. 
             ***평가 기준 중 모든 평가 요소에 대한 문장을 만들 필요는 없어. 필요하다면 일부 문장은 생략해줘.
                        
@@ -117,7 +125,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             ***생활 주변의 자연물이나 인공물의 탐색을 통해 다양한 조형 요소를 찾아보고 그 특징을 이해한 후, 조형 요소의 특징이 잘 나타나도록 주제를 표현함. 미술 작가와 작품의 특징을 조사하고, 좋아하는 미술 작가와 작품을 친구들에게 소개함.
             ***감정이나 상태를 묻고 답하는 말을 할 수 있으며, 누구인지 묻고 답하는 말을 듣고 이해함. 운동에 관한 구를 읽고 뜻을 이해할 수 있으며, 물건을 나타내는 낱말을 쓸 수 있음.
             ***지도의 기호, 축척, 등고선 등을 이해하여 지도에 나타난 지리 정보를 읽을 수 있음. 우리 지역의 문화유산을 조사하여 다양한 정보를 수집하고 소중히 보존해야 함을 인식함.
-            ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
+            ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 전에서 찾아 확인함.
 
             #최종 결과물 산출: 최종적으로 평가결과 문장에서 이름 및 주어를 제외한, 순수한 평가결과를 JSON 형식으로 반환해줘. 
             형식: { "학생데이터": { "번호": "1", "이름": "홍길동" , "평가점수": { ${evaluationAreas} } }, "평가결과": "..." }. 
@@ -142,6 +150,9 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     
     return JSON.parse(jsonString);
   } catch (error) {
+    if (error.message.includes('존재하지 않습니다')) {
+      return null; // 학생이 없는 경우 null 반환
+    }
     throw new Error(`${studentIndex}번 학생 데이터 추출 및 평가 중 오류가 발생했습니다: ${error.message}`);
   }
 }
