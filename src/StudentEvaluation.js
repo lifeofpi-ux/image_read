@@ -525,7 +525,7 @@ function StudentEvaluationTool() {
                   <li className="mb-2 text-sm font-light">II. 옵션 중 한페이지로 출력 체크(중요) 후 조회 버튼</li>
                   <li className="mb-2 text-sm font-light">III. 뷰어 왼쪽 저장 아이콘 클릭 및 PDF 선택 후 저장</li>
                 
-                <h2 className="text-xl font-bold mt-4 mb-6 text-center">🔥전학생 존재시 필수 처리 방법</h2>
+                <h2 className="text-xl font-bold mt-4 mb-6 text-center">🔥전학생 존재시 필수 처리 사항</h2>
                   <ol className="list-inside text-left ">
                   <li className="mb-2 text-sm font-light">I. NEIS 학급담임-성적조회-교과별성적조회 탭</li>
                   <li className="mb-2 text-sm font-light">II. 옵션 중 한페이지로 출력 체크(중요) 후 조회 버튼</li>
