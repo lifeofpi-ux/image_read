@@ -72,10 +72,15 @@ async function getApiKey(userId, teacherId) {
   return openaiApiKey;
 }
 
-async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
+async function extractAndEvaluateStudent(text, studentIndex, studentList, evaluationCriteria, tone, apiKey, wordCount, creativity) {
   try {
     const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
+    const currentStudent = studentList.find(student => student.번호 === studentIndex.toString());
     
+    if (!currentStudent) {
+      throw new Error(`${studentIndex}번 학생을 찾을 수 없습니다.`);
+    }
+
     let tonePrompt = '';
     if (tone === 'neisRecord') {
       tonePrompt = '보임. 씀. ~음. ~함. ~됨. 등의 자연스러운 형태로 문장이 끝나야 하며, 한국어 문장 구조에 맞는 자연스러운 문장을 작성해줘. 학생의 각 영역별 성취기준과 평가요소 문구를 적절히 학생의 평가 결과와 연관지어 평가 문장을 작성해야해. "우수를 받았음" 등과 같이 평가 결과 단어를 직접적으로 사용하면 안돼.';
@@ -90,22 +95,33 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
         messages: [
           {
             role: "system",
-            content: `"역할:  학생들의 성취를 정확한 근거를 토대로 피드백하는 교사의 역할. 말투 지침: ${tonePrompt}, 평가결과 문장에서 학생 이름을 반드시 제외하고, 총 글자수는 ${wordCount}을 기준으로 설정하여, 피드백을 제시해야 함. `
+            content: `역할: 학생들의 성취를 정확한 근거를 토대로 피드백하는 교사
+            말투 지침: ${tonePrompt}
+            평가결과 문장에서 학생 이름을 반드시 제외하고, 총 글자수는 ${wordCount}을 기준으로 설정하여, 피드백을 제시해야 함.`
           },
           {
             role: "user",
             content: `
-            #기본지침
-            1. Text: ${text}에서 학생의 번호 ${studentIndex}, 이름, 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
-            2. 평가시트에는 {번호} {이름} {평가점수} 순서대로 텍스트 배열이 존재하고 있으니, 번호, 이름, 평가 점수를 정확히 추출해줘.
-            3. 전학생의 경우 학급에 실제로 존재하지 않는 학생이므로 학생의 번호 ${studentIndex}가 존재하지 않아. 
-               따라서 번호와 번호 사이에 누락된 번호가 있는 경우는 존재하지 않는 학생이므로 번호가 존재하는 학생만 평가해줘. 
-               *** 동일한 학생을 중복 평가하지 말고, 학생별 번호를 오름차순으로 평가해줘. ***   
-            4. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
-            5. 영역명을 직접 적지는 말아줘.
-            6. 초등학생과 중학생 수준의 학생이니 너무 어려운 표현은 사용되지 않아야해. 
-            7. 너무 짧은 문장들은 1~2문장을 적절하게 연결해서 자연스럽게 만들어줘.
-            8. 평가 기준 성취기준과 평가요소 문장을 재구성하여, 최대한 자연스러운 표현으로 만들어줘. 
+            #현재 평가할 학생 정보
+            - 번호: ${currentStudent.번호}
+            - 이름: ${currentStudent.이름}
+
+            #평가 기준
+            ${JSON.stringify(evaluationCriteria, null, 2)}
+
+            #평가 대상 텍스트
+            ${text}
+
+            #평가 지침
+            1. 주어진 학생의 평가 정보만 정확하게 추출하고, 학생을 평가하는 자연스러운 문장을 생성해줘. 
+            2. 평가 기준의 각 영역별로 평가해줘.
+            3. 평가시트의 {번호} {이름} {평가점수} 순서로 된 텍스트에서 해당 학생의 평가점수 추출해줘.
+            4. 초등학생 수준에 맞는 표현을 사용해줘.
+            5. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
+            6. 영역명을 직접 적지는 말아줘.
+            7. 초등학생과 중학생 수준의 학생이니 너무 어려운 표현은 사용되지 않아야해. 
+            8. 너무 짧은 문장들은 1~2문장을 적절하게 연결해서 자연스럽게 만들어줘.
+            9. 평가 기준 성취기준과 평가요소 문장을 재구성하여, 최대한 자연스러운 표현으로 만들어줘. 
            
  
             #평가문장 기본 생성원칙
@@ -123,9 +139,9 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             ***지도의 기호, 축척, 등고선 등을 이해하여 지도에 나타난 지리 정보를 읽을 수 있음. 우리 지역의 문화유산을 조사하여 다양한 정보를 수집하고 소중히 보존해야 함을 인식함.
             ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
 
-            #최종 결과물 산출: 최종적으로 평가결과 문장에서 이름 및 주어를 제외한, 순수한 평가결과를 JSON 형식으로 반환해줘. 
-            형식: { "학생데이터": { "번호": "1", "이름": "홍길동" , "평가점수": { ${evaluationAreas} } }, "평가결과": "..." }. 
-            `
+
+            #최종 결과물
+            JSON 형식으로 반환: { "학생데이터": { "번호": "번호", "이름": "이름" , "평가점수": { ${evaluationAreas} } }, "평가결과": "..." }`
           }
         ],
         temperature: creativity,
@@ -140,13 +156,9 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     );
 
     const content = response.data.choices[0].message.content;
-    const jsonStart = content.indexOf('{');
-    const jsonEnd = content.lastIndexOf('}') + 1;
-    const jsonString = content.substring(jsonStart, jsonEnd);
-    
-    return JSON.parse(jsonString);
+    return JSON.parse(content);
   } catch (error) {
-    throw new Error(`${studentIndex}번 학생 데이터 추출 및 평가 중 오류가 발생했습니다: ${error.message}`);
+    throw new Error(`${studentIndex}번 학생 평가 중 오류가 발생했습니다: ${error.message}`);
   }
 }
 

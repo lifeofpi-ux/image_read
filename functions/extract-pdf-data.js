@@ -73,7 +73,7 @@ async function getApiKey(userId, teacherId) {
   let openaiApiKey = process.env.OPENAI_API_KEY;
   let useDefaultKey = false;
 
-  // 관�자 설정 확인
+  // 관리자 설정 확인
   const adminDocRef = db.collection('users').doc('indend007@gmail.com');
   const adminDoc = await adminDocRef.get();
   const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
@@ -111,7 +111,7 @@ async function getApiKey(userId, teacherId) {
   }
 
   if (useDefaultKey && !allowDefaultKey) {
-    console.error('❌ 기본 키 사용이 허용되지 않음');
+    console.error('❌ 기본 키 사용이 허용되�� 않음');
     throw new Error('OpenAI API 키가 필요합니다. 프로필 설정에서 API 키를 입력해주세요.');
   }
 
@@ -172,6 +172,56 @@ async function extractTotalStudents(text, userId, teacherId) {
   }
 }
 
+async function extractStudentList(text, apiKey) {
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "학생 목록을 번호 순으로 정렬하여 추출하는 전문가입니다. 항상 유효한 JSON으로 응답합니다."
+          },
+          {
+            role: "user",
+            content: `
+            텍스트에서 학생들의 번호와 이름을 추출하여 번호 순으로 정렬된 JSON 배열로 반환해주세요.
+            
+            지침:
+            1. {번호} {이름} {평가점수} 형식으로 되어있는 텍스트에서 번호와 이름만 추출
+            2. 번호 순으로 오름차순 정렬
+            3. 중복된 학생은 제외
+            4. 번호가 누락된 경우는 제외
+            
+            형식: { "students": [{"번호": "1", "이름": "홍길동"}, ...] }
+            
+            Text: ${text}`
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    const content = response.data.choices[0].message.content;
+    const jsonStart = content.indexOf('{');
+    const jsonEnd = content.lastIndexOf('}') + 1;
+    const jsonString = content.substring(jsonStart, jsonEnd);
+    
+    return JSON.parse(jsonString);
+  } catch (error) {
+    console.error("Error extracting student list:", error);
+    throw new Error('학생 목록 추출 중 오류가 발생했습니다: ' + error.message);
+  }
+}
+
 exports.handler = async function (event, context) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -217,13 +267,15 @@ exports.handler = async function (event, context) {
 
       const fullText = await extractTextFromPDF(pdfBuffer);
       
+      const studentList = await extractStudentList(fullText, openaiApiKey);
       const evaluationCriteria = await extractEvaluationCriteria(fullText, openaiApiKey);
-      const totalStudents = await extractTotalStudents(fullText, userId, teacherId);
+      const totalStudents = studentList.students.length;
 
       return {
         statusCode: 200,
         body: JSON.stringify({
           ...evaluationCriteria,
+          studentList: studentList.students,
           총학생수: totalStudents,
           fullText
         }),
