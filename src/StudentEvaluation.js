@@ -530,7 +530,7 @@ function StudentEvaluationTool() {
                   <li className="mb-2 text-sm font-light">I. NEIS 학급담임-성적조회-교과별성적조회 탭</li>
                   <li className="mb-2 text-sm font-light">II. 옵션 중 한페이지로 출력 체크(중요) 후 조회 버튼</li>
                   <li className="mb-2 text-sm font-light">III. 뷰어 왼쪽 저장 아이콘 클릭 및 한글 파일 선택 후 저장</li>
-                  <li className="mb-2 text-sm font-light">IV. 한글 문서에서 전학생 이름과 가상 데이터 임의 입력 후 PDF 저장</li>
+                  <li className="mb-2 text-sm font-light">IV. 한글 문서에서 전학생 셀에 "전학생"이라고 입력 및 가상 데이터 임의 입력 후 PDF 저장</li>
                 </ol>
                 <button
                   onClick={() => setInfoModalIsOpen(false)}
