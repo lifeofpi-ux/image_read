@@ -72,7 +72,7 @@ async function getApiKey(userId, teacherId) {
   return openaiApiKey;
 }
 
-async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
+async function extractAndEvaluateStudent(text, student, evaluationCriteria, tone, apiKey, wordCount, creativity) {
   try {
     const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
@@ -96,7 +96,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             role: "user",
             content: `
             #기본지침
-            1. Text: ${text}에서 ${studentIndex}번째 학생의 이름과 평가점수(잘함,보통,노력요함 혹은 상,중,하)를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
+            1. Text: ${text}에서 ${student.번호}번 ${student.이름} 학생의 평가점수를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
             2. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
             3. 영역명을 직접 적지는 말아줘.
             4. 초등학생과 중학생 수준의 학생이니 너무 어려운 표현은 사용되지 않아야해. 
@@ -142,7 +142,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     
     return JSON.parse(jsonString);
   } catch (error) {
-    throw new Error(`${studentIndex}번 학생 데이터 추출 및 평가 중 오류가 발생했습니다: ${error.message}`);
+    throw new Error(`${student.번호}번 학생 데이터 추출 및 평가 중 오류가 발생했습니다: ${error.message}`);
   }
 }
 
@@ -160,21 +160,21 @@ exports.handler = async function (event, context) {
       wordCount, 
       creativity,
       userId,
-      teacherId
+      teacherId,
+      학생목록
     } = JSON.parse(event.body);
 
-    if (!evaluationCriteria || studentIndex === undefined || !fullText || !tone || !wordCount || creativity === undefined) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: '잘못된 요청 데이터입니다.' }),
-      };
+    // 학생 정보 검증
+    const currentStudent = 학생목록.find(student => student.번호 === String(studentIndex));
+    if (!currentStudent) {
+      throw new Error(`${studentIndex}번 학생을 찾을 수 없습니다.`);
     }
 
     const openaiApiKey = await getApiKey(userId, teacherId);
 
     const studentDataAndEvaluation = await extractAndEvaluateStudent(
       fullText,
-      studentIndex,
+      currentStudent,
       evaluationCriteria,
       tone,
       openaiApiKey,
@@ -183,13 +183,16 @@ exports.handler = async function (event, context) {
     );
 
     return {
-        statusCode: 200,
-        body: JSON.stringify(studentDataAndEvaluation),
+      statusCode: 200,
+      body: JSON.stringify(studentDataAndEvaluation),
     };
   } catch (error) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: '처리 중 오류가 발생했습니다. API KEY나 파일을 점검해주세요.', details: error.message }),
+      body: JSON.stringify({ 
+        error: '처리 중 오류가 발생했습니다. API KEY나 파일을 점검해주세요.', 
+        details: error.message 
+      }),
     };
   }
 };
