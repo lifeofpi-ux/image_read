@@ -96,7 +96,7 @@ async function extractAndEvaluateStudent(text, student, evaluationCriteria, tone
             role: "user",
             content: `
             #기본지침
-            1. Text: ${text}에서 ${student.번호}번 ${student.이름} 학생의 평가점수를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
+            1. Text: ${text}에서 ${student.번호} ${student.이름} 학생의 평가점수를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
             2. 영역별 평가요소에 해당하는 문장을 기준으로 학생의 평가점수를 기준으로 학생의 수행 정도를 평가하는 구체적이고 자연스러운 문장으로 구성해줘. 
             3. 영역명을 직접 적지는 말아줘.
             4. 초등학생과 중학생 수준의 학생이니 너무 어려운 표현은 사용되지 않아야해. 
