@@ -112,12 +112,12 @@ async function extractAndEvaluateStudent(text, student, evaluationCriteria, tone
                        
             #평가문장 예시
             ***학급에서 예절 바른 친구의 말과 행동을 관찰한 후, 예절 바른 친구를 찾아 칭찬하는 활동에 즐겁게 참여함. 아름다운 삶의 사례를 살펴보고 생활 속에서 참된 아름다움을 실천하려는 마음을 다짐함.
-            ***다양한 이야기를 통해 도덕적인 생활을 해야 하는 이유, 도덕 공부를 해야 하는 이유를 이해함. 예절의 중요성에 대해 알고, 대상과 상황에 따라 예절이 변화함을 이해하여 생활 속에서 꾸준히 실천함.
+            ***다양한 이야기를 통해 도덕적인 생활을 해야 하는 이유, 도덕 공부를 해야 하는 이유를 이해함. 예절의 중요성에 대해 알고, 대상과 상황에 따라 예절이 변화함을 이해하여 생활 속에서 꾸준히 ���천함.
             ***몫이 한 자리 수인 두 자리 수 나누기 두 자리 수, 세 자리 수 나누기 두 자리 수의 계산 원리와 형식을 이해하고 정확히 몫을 구함. 막대그래프의 가로와 세로, 눈금 한 칸의 크기 등 기본 요소를 알고 잘 해석할 수 있음.
             ***생활 주변의 자연물이나 인공물의 탐색을 통해 다양한 조형 요소를 찾아보고 그 특징을 이해한 후, 조형 요소의 특징이 잘 나타나도록 주제를 표현함. 미술 작가와 작품의 특징을 조사하고, 좋아하는 미술 작가와 작품을 친구들에게 소개함.
             ***감정이나 상태를 묻고 답하는 말을 할 수 있으며, 누구인지 묻고 답하는 말을 듣고 이해함. 운동에 관한 구를 읽고 뜻을 이해할 수 있으며, 물건을 나타내는 낱말을 쓸 수 있음.
             ***지도의 기호, 축척, 등고선 등을 이해하여 지도에 나타난 지리 정보를 읽을 수 있음. 우리 지역의 문화유산을 조사하여 다양한 정보를 수집하고 소중히 보존해야 함을 인식함.
-            ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
+            ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 ��인함.
 
             #최종 결과물 산출: 최종적으로 평가결과 문장에서 이름 및 주어를 제외한, 순수한 평가결과를 JSON 형식으로 반환해줘. 
             형식: { "학생데이터": { "번호": "1", "이름": "홍길동" , "평가점수": { ${evaluationAreas} } }, "평가결과": "..." }. 
@@ -164,9 +164,33 @@ exports.handler = async function (event, context) {
       학생목록
     } = JSON.parse(event.body);
 
+    // 요청 데이터 로깅
+    console.log('Received request data:', {
+      studentIndex,
+      학생목록: 학생목록?.length,
+      userId,
+      teacherId
+    });
+
+    // 기본 데이터 검증
+    if (!evaluationCriteria || !fullText || !tone || !wordCount || !creativity || !학생목록) {
+      console.error('Missing required data:', { 
+        evaluationCriteria: !!evaluationCriteria,
+        fullText: !!fullText,
+        tone: !!tone,
+        wordCount: !!wordCount,
+        creativity: !!creativity,
+        학생목록: !!학생목록
+      });
+      throw new Error('필수 데이터가 누락되었습니다.');
+    }
+
     // 학생 정보 검증
     const currentStudent = 학생목록.find(student => student.번호 === String(studentIndex));
+    console.log('Found student:', currentStudent);
+    
     if (!currentStudent) {
+      console.error(`Student not found: index ${studentIndex}`);
       throw new Error(`${studentIndex}번 학생을 찾을 수 없습니다.`);
     }
 
@@ -187,11 +211,14 @@ exports.handler = async function (event, context) {
       body: JSON.stringify(studentDataAndEvaluation),
     };
   } catch (error) {
+    console.error('Error in handler:', error);
+    console.error('Error stack:', error.stack);
     return {
       statusCode: 500,
       body: JSON.stringify({ 
-        error: '처리 중 오류가 발생했습니다. API KEY나 파일을 점검해주세요.', 
-        details: error.message 
+        error: '처리 중 오류가 발생했습니다.', 
+        details: error.message,
+        stack: error.stack
       }),
     };
   }
