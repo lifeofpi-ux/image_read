@@ -86,7 +86,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o-mini",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -128,7 +128,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
           }
         ],
         temperature: creativity,
-        max_tokens: 2000
+        max_tokens: 4000
       },
       {
         headers: {
