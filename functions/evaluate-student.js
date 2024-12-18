@@ -86,7 +86,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o-mini",
+        model: "chatgpt-4o-latest",
         messages: [
           {
             role: "system",
