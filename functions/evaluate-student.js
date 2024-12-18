@@ -97,7 +97,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             content: `
             #기본지침
             1. 전처리 : ${text}에서 "1:01:12임000000000000000000124717" 형태의 문자열은 TEXT 데이터에서 제거해줘.
-            2.  Text: ${text}에서 학생 목록을 파악한뒤, ${studentIndex}번째 순서의 학생의 이름과 {평가점수}를 추출하고, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
+            2.  Text: ${text}에서 학생 목록을 파악한뒤, ${studentIndex}번째 순서의 학생의 이름과 {평가점수}를 추출한 다음, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
               2-1. {평가점수}의 등급은 잘함,보통,노력요함이며, 각 상중하 등급은 다음과 같이 표기되는 것이 일반적이야. 
               2-2. {잘함,보통,노력요함}, {○, □, △}, {◎, ○, △}, {상,중,하}  
 
