@@ -86,7 +86,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "chatgpt-4o-latest",
+        model: "gpt-4o-mini",
         messages: [
           {
             role: "system",
@@ -99,7 +99,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             1. 전처리 : ${text}에서 "1:01:12임000000000000000000124717" 형태의 문자열은 TEXT 데이터에서 제거해줘.
             2.  Text: ${text}에서 학생 목록을 파악한뒤, ${studentIndex}번째 순서의 학생의 이름과 {평가점수}를 추출한 다음, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
               2-1. {평가점수}의 등급은 잘함,보통,노력요함이며, 각 상,중,하 등급은 다음과 같이 표기되는 것이 일반적이야. 
-              2-2. {잘함,보통,노력요함}, {○, □, △}, {◎, ○, △}, {상,중,하}  
+              2-2. {잘함,보통,노력요함}, { ○ , □ , △ }, { ◎ , ○ , △ }, {상,중,하}  
 
             3. 학생이름은 {김,이,최,백,우,유,윤,박,노,강} 등의 단어로 시작하는 3글자 가량의 독립된 문자열이며, 텍스트에서 다음과 같이 번호(숫자)+빈칸+이름(문자열) 형태로 배열되어 있어. 
               1 이름, 2 이름, ... 
