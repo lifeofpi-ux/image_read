@@ -16,7 +16,6 @@ import EditProfileModal from './EditProfileModal';
 import StudentEvaluation from './StudentEvaluation';
 import IdeaCanvasAI from './IdeaCanvasAI'; 
 import TPACKLesson from './components/TPACKLesson'; 
-import TeacherDashboard from './TeacherDashboard';
 import Cookies from 'js-cookie';
 import DashboardButton from './DashboardButton';
 import DashboardPanel from './DashboardPanel';
@@ -320,7 +319,7 @@ function AppContent() {
     console.log('Debug - Is on /conv-ai path:', showOnlyOnConvAI);
     
     // 대시보드 뷰 또는 로그인/프로필 페이지에서는 버튼을 표시하지 않음
-    const excludedRoutes = ['/login', '/profile', '/teacher-dashboard'];
+    const excludedRoutes = ['/login', '/profile'];
     const shouldExclude = excludedRoutes.some(route => path.includes(route));
     
     // AI 채팅도우미 경로에서만 버튼 표시하고, 제외 경로에서는 표시하지 않음
@@ -385,11 +384,6 @@ function AppContent() {
             <li className="mb-1">
               <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" />
             </li>
-            {user && !studentSession && (
-              <li className="mb-1">
-                <NavigationButton to="/teacher-dashboard" text="📊 학생 채팅 대시보드" />
-              </li>
-            )}
           </ul>
           <div className="mt-auto text-sm font-bold text-gray-400 ml-4">
             2024. T.R.I.P.O.D.
@@ -429,7 +423,6 @@ function AppContent() {
             <Route path="/student-evaluation" element={(user || studentSession) ? <StudentEvaluation /> : <Navigate to="/" />} />
             <Route path="/idea-canvas" element={(user || studentSession) ? <IdeaCanvasAI /> : <Navigate to="/" />} />
             <Route path="/tpack-lesson" element={(user || studentSession) ? <TPACKLesson /> : <Navigate to="/" />} />
-            <Route path="/teacher-dashboard" element={user && !studentSession ? <TeacherDashboard /> : <Navigate to="/" />} />
             <Route path="/" element={
               <HomePage 
                 user={user} 
