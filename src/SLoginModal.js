@@ -6,6 +6,7 @@ import Cookies from 'js-cookie';
 function SLoginModal({ onClose, onLoginSuccess }) {
   const [teacherNickname, setTeacherNickname] = useState('');
   const [classCode, setClassCode] = useState('');
+  const [studentName, setStudentName] = useState('');
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -15,6 +16,9 @@ function SLoginModal({ onClose, onLoginSuccess }) {
     setError(null);
 
     try {
+      if (!studentName.trim()) {
+        throw new Error("학생 이름을 입력해주세요.");
+      }
 
       // 교사의 닉네임과 학급 코드로 사용자를 찾습니다.
       const q = query(
@@ -39,14 +43,18 @@ function SLoginModal({ onClose, onLoginSuccess }) {
       }
 
       // 쿠키에 학생 세션 정보를 저장합니다.
-      Cookies.set('studentSession', JSON.stringify({
+      const studentSessionData = {
         teacherId: teacherDoc.id,
         teacherNickname: teacherData.nickname,
-        classCode: teacherData.classCode
-      }), { expires: 1 }); // 1일 후 만료
+        classCode: teacherData.classCode,
+        studentName: studentName.trim(),
+        studentId: `${teacherDoc.id}_${classCode}_${studentName.trim().replace(/\s+/g, '_')}`
+      };
+      
+      Cookies.set('studentSession', JSON.stringify(studentSessionData), { expires: 1 }); // 1일 후 만료
 
       if (typeof onLoginSuccess === 'function') {
-        onLoginSuccess(teacherData);
+        onLoginSuccess({...teacherData, studentName: studentName.trim()});
       } else {
         console.warn("onLoginSuccess is not a function. Login successful, but callback not executed.");
       }
@@ -69,6 +77,18 @@ function SLoginModal({ onClose, onLoginSuccess }) {
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">학생 로그인</h2>
         <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label htmlFor="studentName" className="block text-sm font-medium text-gray-700">학생 이름</label>
+            <input
+              type="text"
+              id="studentName"
+              value={studentName}
+              onChange={(e) => setStudentName(e.target.value)}
+              className="p-2 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              placeholder="실명을 입력해주세요"
+              required
+            />
+          </div>
           <div>
             <label htmlFor="teacherNickname" className="block text-sm font-medium text-gray-700">선생님 닉네임</label>
             <input

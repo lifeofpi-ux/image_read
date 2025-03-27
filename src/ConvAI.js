@@ -307,10 +307,14 @@ function ConvAI() {
       };
       const assistantMessage = {
         role: 'assistant',
-        content: currentPrompt.aiPrompt,
+        content: `##AI_INSTRUCTION## ${currentPrompt.aiPrompt}`,
       };
       historyWithPrompt.unshift(systemMessage);
-      historyWithPrompt.push(assistantMessage);
+      
+      // AI 지시사항이 있는 경우만 추가
+      if (currentPrompt.aiPrompt) {
+        historyWithPrompt.push(assistantMessage);
+      }
     }
   
     const user = auth.currentUser;
@@ -322,6 +326,14 @@ function ConvAI() {
       setIsLoading(false);
       return;
     }
+    
+    // 학생 세션 정보 디버깅 로그
+    console.log('🧩 Current session info:', {
+      isStudent: !!studentSession,
+      studentId: session.studentId || 'not available',
+      studentName: session.studentName || 'not available',
+      teacherId: session.teacherId || 'not available'
+    });
   
     try {
       console.log('Sending request with data:', { 
@@ -329,7 +341,9 @@ function ConvAI() {
         history: historyWithPrompt,
         userId: userId,
         teacherId: session.teacherId || null,
-        currentPrompt: currentPrompt
+        currentPrompt: currentPrompt,
+        studentId: session.studentId || null,
+        studentName: session.studentName || null
       });
   
       const response = await fetch(API_URL, {
@@ -342,7 +356,9 @@ function ConvAI() {
           history: historyWithPrompt,
           userId: userId,
           teacherId: session.teacherId || null,
-          currentPrompt: currentPrompt
+          currentPrompt: currentPrompt,
+          studentId: session.studentId || null,
+          studentName: session.studentName || null
         })
       });
   

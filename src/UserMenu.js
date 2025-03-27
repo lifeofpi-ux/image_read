@@ -39,12 +39,13 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
   const displayName = user 
     ? `${user.nickname || user.displayName || '알 수 없음'} 선생님` 
     : studentSession
-    ? `${studentSession.teacherNickname || '알 수 없음'} 선생님 학생`
+    ? `${studentSession.studentName || '학생'} (${studentSession.teacherNickname || '알 수 없음'} 학급)`
     : '알 수 없음';
 
   const userType = user ? 'teacher' : 'student';
   const nickname = user ? (user.nickname || user.displayName || '알 수 없음') : 
                    (studentSession ? studentSession.teacherNickname : '알 수 없음');
+  const studentName = studentSession ? studentSession.studentName : '';
 
   return (
     <div className="relative" ref={menuRef}>
@@ -68,6 +69,11 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
               내 정보 수정
             </button>
           )}
+          {studentSession && (
+            <div className="px-4 py-2 text-sm text-gray-500 border-b border-gray-200">
+              {studentSession.studentName} 학생
+            </div>
+          )}
           <button
             onClick={handleLogout}
             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -81,6 +87,7 @@ const UserMenu = ({ user, studentSession, onLogout, onEditProfile }) => {
           onClose={() => setShowLogoutModal(false)}
           userType={userType}
           nickname={nickname}
+          studentName={studentName}
         />
       )}
     </div>

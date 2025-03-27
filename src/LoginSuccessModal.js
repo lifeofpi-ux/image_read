@@ -1,9 +1,11 @@
 import React from 'react';
 
-function LoginSuccessModal({ onClose, userType, nickname }) {
+function LoginSuccessModal({ onClose, userType, nickname, studentName }) {
   let message;
   if (userType === 'logout') {
     message = '로그아웃 되었습니다.';
+  } else if (userType === 'student' && studentName) {
+    message = `${studentName} 학생으로 로그인되었습니다.`;
   } else {
     message =  `${userType === 'teacher' ? '선생님' : '선생님의 학생'}으로 로그인되었습니다.`;
   }
@@ -14,7 +16,15 @@ function LoginSuccessModal({ onClose, userType, nickname }) {
         <h2 className="text-xl font-bold mb-4 text-center">
           {userType === 'logout' ? '🖐️로그아웃' : '😀로그인'}
         </h2>
-        <p className="text-center mb-6">{nickname} {message}</p>
+        <p className="text-center mb-6">
+          {userType === 'student' && studentName ? (
+            <>
+              <span className="font-bold">{studentName}</span> 학생님, {nickname} 선생님 학급으로 로그인되었습니다.
+            </>
+          ) : (
+            <>{nickname} {message}</>
+          )}
+        </p>
       
         <button
           onClick={onClose}

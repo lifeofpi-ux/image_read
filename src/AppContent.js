@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Route, Routes, Navigate, Link, useNavigate } from 'react-router-dom';
+import { Route, Routes, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -16,7 +16,10 @@ import EditProfileModal from './EditProfileModal';
 import StudentEvaluation from './StudentEvaluation';
 import IdeaCanvasAI from './IdeaCanvasAI'; 
 import TPACKLesson from './components/TPACKLesson'; 
+import TeacherDashboard from './TeacherDashboard';
 import Cookies from 'js-cookie';
+import DashboardButton from './DashboardButton';
+import DashboardPanel from './DashboardPanel';
 
 function AppContent() {
   const [isLeftSideTabOpen, setIsLeftSideTabOpen] = useState(false);
@@ -26,6 +29,7 @@ function AppContent() {
   const [isStudentLoginModalOpen, setIsStudentLoginModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [isTeacher, setIsTeacher] = useState(false);
   const [studentSession, setStudentSession] = useState(null);
   const [showLoginSuccess, setShowLoginSuccess] = useState(false);
   const [loginSuccessInfo, setLoginSuccessInfo] = useState({ userType: '', nickname: '' });
@@ -34,8 +38,11 @@ function AppContent() {
   const [redirectPath, setRedirectPath] = useState('');
   const [isLoginConfirmModalOpen, setIsLoginConfirmModalOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState('');
+  const [showDashboard, setShowDashboard] = useState(false);
+  const [dashboardType, setDashboardType] = useState('chat');
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = useCallback(async () => {
     try {
@@ -86,9 +93,12 @@ function AppContent() {
           const userDoc = await getDoc(userDocRef);
           
           let nickname = authUser.displayName;
+          let userIsTeacher = false;
+          
           if (userDoc.exists()) {
             const userData = userDoc.data();
             nickname = userData.nickname || nickname;
+            userIsTeacher = userData.role === 'teacher';
           }
 
           const updatedUser = {
@@ -97,6 +107,7 @@ function AppContent() {
           };
           
           setUser(updatedUser);
+          setIsTeacher(userIsTeacher);
           
           if (isManualLogin) {
             setShowLoginSuccess(true);
@@ -111,9 +122,11 @@ function AppContent() {
             ...authUser,
             nickname: authUser.displayName || '선생님'
           });
+          setIsTeacher(false);
         }
       } else {
         setUser(null);
+        setIsTeacher(false);
         setIsEditProfileModalOpen(false);
       }
     });
@@ -139,7 +152,9 @@ function AppContent() {
     const sessionData = {
       teacherId: teacherData.userId,
       teacherNickname: teacherData.nickname || '선생님',
-      classCode: teacherData.classCode
+      classCode: teacherData.classCode,
+      studentName: teacherData.studentName || '학생',
+      studentId: `${teacherData.userId}_${teacherData.classCode}_${(teacherData.studentName || '학생').replace(/\s+/g, '_')}`
     };
     setStudentSession(sessionData);
     Cookies.set('studentSession', JSON.stringify(sessionData), { expires: 1 });
@@ -147,7 +162,8 @@ function AppContent() {
     setShowLoginSuccess(true);
     setLoginSuccessInfo({ 
       userType: 'student', 
-      nickname: teacherData.nickname || '선생님' 
+      nickname: teacherData.nickname || '선생님',
+      studentName: teacherData.studentName || '학생'
     });
   }, []);
 
@@ -255,6 +271,76 @@ function AppContent() {
     </div>
   );
 
+  // 현재 경로에 따라 대시보드 타입을 결정하는 함수
+  const getDashboardTypeFromPath = (path) => {
+    if (path.includes('/chat') || path === '/') {
+      return 'chat';
+    } else if (path.includes('/quiz')) {
+      return 'quiz';
+    } else if (path.includes('/writing')) {
+      return 'writing';
+    }
+    return 'chat'; // 기본값
+  };
+  
+  // 현재 라우트에 대시보드 버튼을 표시할지 결정하는 함수
+  const shouldShowDashboardButton = (path) => {
+    // 콘솔에 현재 사용자 상태 및 권한 로깅 (디버깅 목적)
+    console.log('Debug - User state:', !!user);
+    console.log('Debug - Teacher state:', isTeacher);
+    console.log('Debug - Current path:', path);
+    
+    // 로그인 상태가 아니거나 선생님이 아니면 대시보드 버튼을 표시하지 않음
+    if (!user) {
+      console.log('Debug - No user logged in');
+      return false;
+    }
+
+    // 학생으로 로그인한 경우 대시보드 버튼을 표시하지 않음
+    if (studentSession) {
+      console.log('Debug - Student session active');
+      return false;
+    }
+    
+    // 임시: 디버깅 중에는 모든 사용자에게 버튼 표시
+    // 실제 배포 시 아래 주석 해제
+    // if (!isTeacher) {
+    //   console.log('Debug - User is not a teacher');
+    //   return false;
+    // }
+    
+    // 대시보드가 이미 활성화되어 있으면 버튼을 표시하지 않음
+    if (showDashboard) {
+      console.log('Debug - Dashboard already open');
+      return false;
+    }
+    
+    // AI 채팅도우미 페이지에서만 버튼 표시
+    const showOnlyOnConvAI = path.includes('/conv-ai');
+    console.log('Debug - Is on /conv-ai path:', showOnlyOnConvAI);
+    
+    // 대시보드 뷰 또는 로그인/프로필 페이지에서는 버튼을 표시하지 않음
+    const excludedRoutes = ['/login', '/profile', '/teacher-dashboard'];
+    const shouldExclude = excludedRoutes.some(route => path.includes(route));
+    
+    // AI 채팅도우미 경로에서만 버튼 표시하고, 제외 경로에서는 표시하지 않음
+    const shouldShow = showOnlyOnConvAI && !shouldExclude;
+    console.log('Debug - Button should display:', shouldShow);
+    return shouldShow;
+  };
+  
+  // 대시보드 열기 핸들러
+  const handleOpenDashboard = () => {
+    const currentType = getDashboardTypeFromPath(location.pathname);
+    setDashboardType(currentType);
+    setShowDashboard(true);
+  };
+  
+  // 대시보드 닫기 핸들러
+  const handleCloseDashboard = () => {
+    setShowDashboard(false);
+  };
+
   return (
     <div className="min-h-screen bg-white text-gray-800 flex relative font-sans">
       {isLeftSideTabOpen && (
@@ -299,6 +385,11 @@ function AppContent() {
             <li className="mb-1">
               <NavigationButton to="/student-evaluation" text="📊 학생 성적 평가 도구" />
             </li>
+            {user && !studentSession && (
+              <li className="mb-1">
+                <NavigationButton to="/teacher-dashboard" text="📊 학생 채팅 대시보드" />
+              </li>
+            )}
           </ul>
           <div className="mt-auto text-sm font-bold text-gray-400 ml-4">
             2024. T.R.I.P.O.D.
@@ -338,6 +429,7 @@ function AppContent() {
             <Route path="/student-evaluation" element={(user || studentSession) ? <StudentEvaluation /> : <Navigate to="/" />} />
             <Route path="/idea-canvas" element={(user || studentSession) ? <IdeaCanvasAI /> : <Navigate to="/" />} />
             <Route path="/tpack-lesson" element={(user || studentSession) ? <TPACKLesson /> : <Navigate to="/" />} />
+            <Route path="/teacher-dashboard" element={user && !studentSession ? <TeacherDashboard /> : <Navigate to="/" />} />
             <Route path="/" element={
               <HomePage 
                 user={user} 
@@ -412,6 +504,21 @@ function AppContent() {
         />
       )}
       {isLoginConfirmModalOpen && <LoginConfirmModal />}
+
+      {/* 대시보드 버튼 (현재 경로에 따라 표시 여부 결정) */}
+      {shouldShowDashboardButton(location.pathname) && (
+        <DashboardButton 
+          onClick={handleOpenDashboard}
+          dashboardType={getDashboardTypeFromPath(location.pathname)}
+        />
+      )}
+      
+      {/* 대시보드 패널 */}
+      <DashboardPanel 
+        isOpen={showDashboard} 
+        onClose={handleCloseDashboard}
+        dashboardType={dashboardType}
+      />
     </div>
   );
 }
