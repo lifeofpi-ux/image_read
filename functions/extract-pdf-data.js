@@ -35,7 +35,7 @@ async function extractEvaluationCriteria(text, apiKey) {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",
@@ -131,7 +131,7 @@ async function extractTotalStudents(text, userId, teacherId) {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4o",
+        model: "gpt-4.1",
         messages: [
           {
             role: "system",

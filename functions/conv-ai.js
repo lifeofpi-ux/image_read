@@ -188,12 +188,12 @@ exports.handler = async function(event, context) {
     // 새로운 사용자 메시지 추가
     processedHistory.push({ role: 'user', content: message });
 
-    console.log('Sending request to OpenAI:', { model: 'gpt-4o', messages: processedHistory });
+    console.log('Sending request to OpenAI:', { model: 'gpt-4.1', messages: processedHistory });
 
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: 'gpt-4o',
+        model: 'gpt-4.1',
         messages: processedHistory,
         max_tokens: 2000
       },

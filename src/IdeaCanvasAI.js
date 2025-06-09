@@ -494,7 +494,7 @@ const IdeaCanvasAI = () => {
     <DndProvider backend={HTML5Backend}>
       <div className="mt-20 flex flex-col items-center w-full h-full">
         <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ 아이디어 캔버스 AI</h1>
-        <div className="text-sm font-normal text-center mb-4 text-gray-400">ChatGPT-4o 기반</div>
+        <div className="text-sm font-normal text-center mb-4 text-gray-400">Chatgpt-4.1 기반</div>
         <div className="relative w-full h-full flex justify-center items-start mt-6">
           <div className="min-h-60vh relative rounded-lg shadow-lg border border-gray-300 flex flex-wrap content-start p-6"
                style={{ ...canvasStyle, width: 'calc(100% - 80px)', height: '100%', overflow: 'auto' }}>

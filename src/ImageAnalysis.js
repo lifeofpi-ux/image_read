@@ -507,7 +507,7 @@ function ImageAnalysis() {
           <div className="max-w-6xl mx-auto">
             <div className="w-[760px] px-4">
               <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ 이미지 산출물 기반 평가 분석 도구</h1>
-              <div className="text-sm font-normal text-center mb-10 text-gray-400">Chatgpt-4o 기반</div>
+              <div className="text-sm font-normal text-center mb-10 text-gray-400">Chatgpt-4.1 기반</div>
               <div className="mb-8">
                 <label className="m-auto w-[300px] flex flex-col items-center px-4 py-6 bg-gray-50 text-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 hover:text-gray-700 transition duration-300 ease-in-out border-2 border-dashed border-[#d1d1d1]">
                   <svg className="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

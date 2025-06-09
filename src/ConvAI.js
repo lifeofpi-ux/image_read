@@ -509,7 +509,7 @@ function ConvAI() {
           <div className="max-w-6xl mx-auto">
             <div className="w-[760px] px-4">
               <h1 className="text-2xl font-semibold text-center mb-2 text-gray-800">✨ AI 채팅 도우미</h1>
-              <div className="text-sm font-normal text-center mb-10 text-gray-400">ChatGPT-4o 기반</div>
+              <div className="text-sm font-normal text-center mb-10 text-gray-400">Chatgpt-4.1 기반</div>
               {currentPrompt && (
                 <div className="mb-4 text-left text-base text-gray-600 flex justify-between items-center">
                   <div>✨ 현재 챗봇 모드 : <strong>{currentPrompt.title}</strong></div>
