@@ -5,74 +5,119 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 
 // Firebase Admin SDK 초기화
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+let db = null;
+let firebaseInitialized = false;
 
-const db = admin.firestore();
+if (!admin.apps.length) {
+  try {
+    // Private key 처리 개선
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    if (privateKey) {
+      // 로컬 환경에서 따옴표로 감싸진 경우 제거
+      privateKey = privateKey.replace(/^"(.*)"$/, '$1');
+      // 이스케이프된 개행 문자를 실제 개행 문자로 변환
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: privateKey,
+      }),
+    });
+    
+    db = admin.firestore();
+    firebaseInitialized = true;
+    console.log('✅ Firebase Admin SDK 초기화 성공');
+  } catch (error) {
+    console.error('❌ Firebase Admin SDK 초기화 실패:', error.message);
+    console.warn('⚠️ Firebase 기능 없이 기본 API 키로만 동작합니다.');
+    firebaseInitialized = false;
+  }
+} else {
+  db = admin.firestore();
+  firebaseInitialized = true;
+}
 
 async function getApiKey(userId, teacherId) {
   let openaiApiKey = process.env.OPENAI_API_KEY;
   let useDefaultKey = false;
   let isPersonalKey = false;
 
-  // 관리자 설정 확인
-  const adminDocRef = db.collection('users').doc('indend007@gmail.com');
-  const adminDoc = await adminDocRef.get();
-  const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
-  
-  console.log('🔑 관리자 키 사용 허용 상태:', allowDefaultKey);
+  // Firebase가 초기화되지 않은 경우 기본 키 사용
+  if (!firebaseInitialized || !db) {
+    console.warn('⚠️ Firebase 연결 실패: 기본 API 키 사용');
+    if (!openaiApiKey) {
+      throw new Error('Firebase 연결 실패 및 기본 API 키 없음');
+    }
+    return { apiKey: openaiApiKey, isPersonalKey: false };
+  }
 
-  if (teacherId) {
-    const teacherDocRef = db.collection('users').doc(teacherId.trim());
-    const teacherDoc = await teacherDocRef.get();
+  try {
+    // 관리자 설정 확인
+    const adminDocRef = db.collection('users').doc('indend007@gmail.com');
+    const adminDoc = await adminDocRef.get();
+    const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
+    
+    console.log('🔑 관리자 키 사용 허용 상태:', allowDefaultKey);
 
-    if (teacherDoc.exists) {
-      const teacherData = teacherDoc.data();
-      if (teacherData.openaiKey) {
-        console.log('👩‍🏫 교사 개인 키 사용');
-        openaiApiKey = teacherData.openaiKey;
-        isPersonalKey = true;
-      } else {
-        console.log('🔄 기본 키 사용 시도');
-        useDefaultKey = true;
+    if (teacherId) {
+      const teacherDocRef = db.collection('users').doc(teacherId.trim());
+      const teacherDoc = await teacherDocRef.get();
+
+      if (teacherDoc.exists) {
+        const teacherData = teacherDoc.data();
+        if (teacherData.openaiKey) {
+          console.log('👩‍🏫 교사 개인 키 사용');
+          openaiApiKey = teacherData.openaiKey;
+          isPersonalKey = true;
+        } else {
+          console.log('🔄 기본 키 사용 시도');
+          useDefaultKey = true;
+        }
+      }
+    } else if (userId) {
+      const userDocRef = db.collection('users').doc(userId.trim());
+      const userDoc = await userDocRef.get();
+
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData.openaiKey) {
+          console.log('👤 사용자 개인 키 사용');
+          openaiApiKey = userData.openaiKey;
+          isPersonalKey = true;
+        } else {
+          console.log('🔄 기본 키 사용 시도');
+          useDefaultKey = true;
+        }
       }
     }
-  } else if (userId) {
-    const userDocRef = db.collection('users').doc(userId.trim());
-    const userDoc = await userDocRef.get();
 
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      if (userData.openaiKey) {
-        console.log('👤 사용자 개인 키 사용');
-        openaiApiKey = userData.openaiKey;
-        isPersonalKey = true;
-      } else {
-        console.log('🔄 기본 키 사용 시도');
-        useDefaultKey = true;
-      }
+    if (useDefaultKey && !allowDefaultKey) {
+      console.error('❌ 기본 키 사용이 허용되지 않음');
+      throw new Error('OpenAI API 키가 필요합니다. 프로필 설정에서 API 키를 입력해주세요.');
+    }
+
+    if (!openaiApiKey) {
+      console.error('❌ API 키를 찾을 수 없음');
+      throw new Error('API key not found');
+    }
+
+    console.log('✅ API 키 사용 준비 완료');
+    return { apiKey: openaiApiKey, isPersonalKey };
+  } catch (error) {
+    console.error('Firebase 연결 중 오류:', error.message);
+    
+    // Firebase 오류 시 기본 키 사용
+    if (openaiApiKey) {
+      console.warn('⚠️ Firebase 오류로 기본 API 키 사용');
+      return { apiKey: openaiApiKey, isPersonalKey: false };
+    } else {
+      throw new Error('Firebase 연결 실패 및 기본 API 키 없음');
     }
   }
-
-  if (useDefaultKey && !allowDefaultKey) {
-    console.error('❌ 기본 키 사용이 허용되지 않음');
-    throw new Error('OpenAI API 키가 필요합니다. 프로필 설정에서 API 키를 입력해주세요.');
-  }
-
-  if (!openaiApiKey) {
-    console.error('❌ API 키를 찾을 수 없음');
-    throw new Error('API key not found');
-  }
-
-  console.log('✅ API 키 사용 준비 완료');
-  return { apiKey: openaiApiKey, isPersonalKey };
 }
 
 async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity, isPersonalKey) {

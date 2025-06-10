@@ -7,17 +7,41 @@ const admin = require('firebase-admin');
 require('dotenv').config();
 
 // Firebase Admin SDK 초기화
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+let db = null;
+let firebaseInitialized = false;
 
-const db = admin.firestore();
+if (!admin.apps.length) {
+  try {
+    // Private key 처리 개선
+    let privateKey = process.env.FIREBASE_PRIVATE_KEY;
+    
+    if (privateKey) {
+      // 로컬 환경에서 따옴표로 감싸진 경우 제거
+      privateKey = privateKey.replace(/^"(.*)"$/, '$1');
+      // 이스케이프된 개행 문자를 실제 개행 문자로 변환
+      privateKey = privateKey.replace(/\\n/g, '\n');
+    }
+
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: privateKey,
+      }),
+    });
+    
+    db = admin.firestore();
+    firebaseInitialized = true;
+    console.log('✅ Firebase Admin SDK 초기화 성공');
+  } catch (error) {
+    console.error('❌ Firebase Admin SDK 초기화 실패:', error.message);
+    console.warn('⚠️ Firebase 기능 없이 기본 API 키로만 동작합니다.');
+    firebaseInitialized = false;
+  }
+} else {
+  db = admin.firestore();
+  firebaseInitialized = true;
+}
 
 async function extractTextFromPDF(pdfBuffer) {
   try {
@@ -73,55 +97,76 @@ async function getApiKey(userId, teacherId) {
   let openaiApiKey = process.env.OPENAI_API_KEY;
   let useDefaultKey = false;
 
-  // 관�자 설정 확인
-  const adminDocRef = db.collection('users').doc('indend007@gmail.com');
-  const adminDoc = await adminDocRef.get();
-  const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
-  
-  console.log('🔑 관리자 키 사용 허용 상태:', allowDefaultKey);
+  // Firebase가 초기화되지 않은 경우 기본 키 사용
+  if (!firebaseInitialized || !db) {
+    console.warn('⚠️ Firebase 연결 실패: 기본 API 키 사용');
+    if (!openaiApiKey) {
+      throw new Error('Firebase 연결 실패 및 기본 API 키 없음');
+    }
+    return openaiApiKey;
+  }
 
-  if (teacherId) {
-    const teacherDocRef = db.collection('users').doc(teacherId.trim());
-    const teacherDoc = await teacherDocRef.get();
+  try {
+    // 관리자 설정 확인
+    const adminDocRef = db.collection('users').doc('indend007@gmail.com');
+    const adminDoc = await adminDocRef.get();
+    const allowDefaultKey = adminDoc.exists && adminDoc.data().allowDefaultKey;
+    
+    console.log('🔑 관리자 키 사용 허용 상태:', allowDefaultKey);
 
-    if (teacherDoc.exists) {
-      const teacherData = teacherDoc.data();
-      if (teacherData.openaiKey) {
-        console.log('👩‍🏫 교사 개인 키 사용');
-        openaiApiKey = teacherData.openaiKey;
-      } else {
-        console.log('🔄 기본 키 사용 시도');
-        useDefaultKey = true;
+    if (teacherId) {
+      const teacherDocRef = db.collection('users').doc(teacherId.trim());
+      const teacherDoc = await teacherDocRef.get();
+
+      if (teacherDoc.exists) {
+        const teacherData = teacherDoc.data();
+        if (teacherData.openaiKey) {
+          console.log('👩‍🏫 교사 개인 키 사용');
+          openaiApiKey = teacherData.openaiKey;
+        } else {
+          console.log('🔄 기본 키 사용 시도');
+          useDefaultKey = true;
+        }
+      }
+    } else if (userId) {
+      const userDocRef = db.collection('users').doc(userId.trim());
+      const userDoc = await userDocRef.get();
+
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData.openaiKey) {
+          console.log('👤 사용자 개인 키 사용');
+          openaiApiKey = userData.openaiKey;
+        } else {
+          console.log('🔄 기본 키 사용 시도');
+          useDefaultKey = true;
+        }
       }
     }
-  } else if (userId) {
-    const userDocRef = db.collection('users').doc(userId.trim());
-    const userDoc = await userDocRef.get();
 
-    if (userDoc.exists) {
-      const userData = userDoc.data();
-      if (userData.openaiKey) {
-        console.log('👤 사용자 개인 키 사용');
-        openaiApiKey = userData.openaiKey;
-      } else {
-        console.log('🔄 기본 키 사용 시도');
-        useDefaultKey = true;
-      }
+    if (useDefaultKey && !allowDefaultKey) {
+      console.error('❌ 기본 키 사용이 허용되지 않음');
+      throw new Error('OpenAI API 키가 필요합니다. 프로필 설정에서 API 키를 입력해주세요.');
+    }
+
+    if (!openaiApiKey) {
+      console.error('❌ API 키를 찾을 수 없음');
+      throw new Error('API key not found');
+    }
+
+    console.log('✅ API 키 사용 준비 완료');
+    return openaiApiKey;
+  } catch (error) {
+    console.error('Firebase 연결 중 오류:', error.message);
+    
+    // Firebase 오류 시 기본 키 사용
+    if (openaiApiKey) {
+      console.warn('⚠️ Firebase 오류로 기본 API 키 사용');
+      return openaiApiKey;
+    } else {
+      throw new Error('Firebase 연결 실패 및 기본 API 키 없음');
     }
   }
-
-  if (useDefaultKey && !allowDefaultKey) {
-    console.error('❌ 기본 키 사용이 허용되지 않음');
-    throw new Error('OpenAI API 키가 필요합니다. 프로필 설정에서 API 키를 입력해주세요.');
-  }
-
-  if (!openaiApiKey) {
-    console.error('❌ API 키를 찾을 수 없음');
-    throw new Error('API key not found');
-  }
-
-  console.log('✅ API 키 사용 준비 완료');
-  return openaiApiKey;
 }
 
 async function extractTotalStudents(text, userId, teacherId) {
@@ -174,74 +219,147 @@ async function extractTotalStudents(text, userId, teacherId) {
 }
 
 exports.handler = async function (event, context) {
+  // CORS 헤더 설정
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+
+  if (event.httpMethod === 'OPTIONS') {
+    return { statusCode: 200, headers, body: '' };
+  }
+
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { 
+      statusCode: 405, 
+      headers,
+      body: JSON.stringify({ error: 'Method Not Allowed' })
+    };
   }
 
   try {
     const contentType = event.headers['content-type'];
     
-    if (contentType && contentType.includes('multipart/form-data')) {
-      const boundary = multipart.getBoundary(contentType);
-      const parts = multipart.parse(Buffer.from(event.body, 'base64'), boundary);
-      let pdfBuffer;
-      let userId;
-      let teacherId;
-
-      for (const part of parts) {
-        if (part.name === 'userId') {
-          userId = part.data.toString();
-        } else if (part.name === 'teacherId') {
-          teacherId = part.data.toString();
-        } else if (part.filename && part.filename.endsWith('.pdf')) {
-          pdfBuffer = part.data;
-        }
-      }
-
-      if (!pdfBuffer) {
-        console.error("PDF file not uploaded");
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'PDF 파일이 업로드되지 않았습니다.' }),
-        };
-      }
-
-      if (!userId && !teacherId) {
-        console.error("User ID or Teacher ID not provided");
-        return {
-          statusCode: 400,
-          body: JSON.stringify({ error: 'User ID 또는 Teacher ID가 제공되지 않았습니다.' }),
-        };
-      }
-
-      const openaiApiKey = await getApiKey(userId, teacherId);
-
-      const fullText = await extractTextFromPDF(pdfBuffer);
-      
-      const evaluationCriteria = await extractEvaluationCriteria(fullText, openaiApiKey);
-      const totalStudents = await extractTotalStudents(fullText, userId, teacherId);
-
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          ...evaluationCriteria,
-          총학생수: totalStudents,
-          fullText
-        }),
-      };
-
-    } else {
-      console.error("Invalid request format");
+    if (!contentType || !contentType.includes('multipart/form-data')) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: '잘못된 요청 형식입니다.' }),
+        headers,
+        body: JSON.stringify({ error: '잘못된 요청 형식입니다. multipart/form-data가 필요합니다.' }),
       };
     }
+
+    const boundary = multipart.getBoundary(contentType);
+    const parts = multipart.parse(Buffer.from(event.body, 'base64'), boundary);
+    let pdfBuffer;
+    let userId;
+    let teacherId;
+
+    for (const part of parts) {
+      if (part.name === 'userId') {
+        userId = part.data.toString();
+      } else if (part.name === 'teacherId') {
+        teacherId = part.data.toString();
+      } else if (part.filename && part.filename.endsWith('.pdf')) {
+        pdfBuffer = part.data;
+      }
+    }
+
+    if (!pdfBuffer) {
+      console.error("PDF file not uploaded");
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'PDF 파일이 업로드되지 않았습니다.' }),
+      };
+    }
+
+    if (!userId && !teacherId) {
+      console.error("User ID or Teacher ID not provided");
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'User ID 또는 Teacher ID가 제공되지 않았습니다.' }),
+      };
+    }
+
+    console.log('📄 PDF 처리 시작...');
+    
+    // API 키 확인
+    let openaiApiKey;
+    try {
+      openaiApiKey = await getApiKey(userId, teacherId);
+    } catch (apiKeyError) {
+      console.error('API 키 오류:', apiKeyError.message);
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: apiKeyError.message }),
+      };
+    }
+
+    // PDF 텍스트 추출
+    let fullText;
+    try {
+      fullText = await extractTextFromPDF(pdfBuffer);
+      console.log('✅ PDF 텍스트 추출 완료');
+    } catch (pdfError) {
+      console.error('PDF 추출 오류:', pdfError.message);
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'PDF 파일을 읽을 수 없습니다. 파일이 손상되었거나 암호화되어 있을 수 있습니다.' }),
+      };
+    }
+
+    // 평가 기준 추출
+    let evaluationCriteria;
+    try {
+      evaluationCriteria = await extractEvaluationCriteria(fullText, openaiApiKey);
+      console.log('✅ 평가 기준 추출 완료');
+    } catch (criteriaError) {
+      console.error('평가 기준 추출 오류:', criteriaError.message);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: '평가 기준을 추출할 수 없습니다. AI 서비스에 문제가 있거나 API 키를 확인해주세요.' }),
+      };
+    }
+
+    // 총 학생 수 추출
+    let totalStudents;
+    try {
+      totalStudents = await extractTotalStudents(fullText, userId, teacherId);
+      console.log('✅ 총 학생 수 추출 완료:', totalStudents);
+    } catch (studentsError) {
+      console.error('학생 수 추출 오류:', studentsError.message);
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: '학생 수를 추출할 수 없습니다. PDF 형식을 확인해주세요.' }),
+      };
+    }
+
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        ...evaluationCriteria,
+        총학생수: totalStudents,
+        fullText
+      }),
+    };
+
   } catch (error) {
-    console.error("Error in handler:", error);
+    console.error("전체 처리 중 예상치 못한 오류:", error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: '처리 중 오류가 발생했습니다. API KEY나 파일을 점검해주세요.', details: error.message }),
+      headers,
+      body: JSON.stringify({ 
+        error: '서버에서 예상치 못한 오류가 발생했습니다.', 
+        details: error.message 
+      }),
     };
   }
 };
