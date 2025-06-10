@@ -20,6 +20,7 @@ const db = admin.firestore();
 async function getApiKey(userId, teacherId) {
   let openaiApiKey = process.env.OPENAI_API_KEY;
   let useDefaultKey = false;
+  let isPersonalKey = false;
 
   // 관리자 설정 확인
   const adminDocRef = db.collection('users').doc('indend007@gmail.com');
@@ -37,6 +38,7 @@ async function getApiKey(userId, teacherId) {
       if (teacherData.openaiKey) {
         console.log('👩‍🏫 교사 개인 키 사용');
         openaiApiKey = teacherData.openaiKey;
+        isPersonalKey = true;
       } else {
         console.log('🔄 기본 키 사용 시도');
         useDefaultKey = true;
@@ -51,6 +53,7 @@ async function getApiKey(userId, teacherId) {
       if (userData.openaiKey) {
         console.log('👤 사용자 개인 키 사용');
         openaiApiKey = userData.openaiKey;
+        isPersonalKey = true;
       } else {
         console.log('🔄 기본 키 사용 시도');
         useDefaultKey = true;
@@ -69,10 +72,10 @@ async function getApiKey(userId, teacherId) {
   }
 
   console.log('✅ API 키 사용 준비 완료');
-  return openaiApiKey;
+  return { apiKey: openaiApiKey, isPersonalKey };
 }
 
-async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity) {
+async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria, tone, apiKey, wordCount, creativity, isPersonalKey) {
   try {
     const evaluationAreas = evaluationCriteria.영역.map(area => `"${area}": "평가 결과"`).join(", ");
     
@@ -83,10 +86,14 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
       tonePrompt = '학생에게 긍정과 성찰을 돕는 평가 문체로 작성해주며 각 영역별 성취기준과 평가요소 문구를 적절히 연관지어 문장을 작성해야 함.';
     }
 
+    // 개인 키 사용 시 gpt-4.1, 기본 키 사용 시 gpt-4.1-mini
+    const modelToUse = isPersonalKey ? "gpt-4.1" : "gpt-4o-mini";
+    console.log(`🤖 사용 모델: ${modelToUse} (개인키: ${isPersonalKey})`);
+
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
-        model: "gpt-4.1-mini",
+        model: modelToUse,
         messages: [
           {
             role: "system",
@@ -177,16 +184,17 @@ exports.handler = async function (event, context) {
       };
     }
 
-    const openaiApiKey = await getApiKey(userId, teacherId);
+    const { apiKey, isPersonalKey } = await getApiKey(userId, teacherId);
 
     const studentDataAndEvaluation = await extractAndEvaluateStudent(
       fullText,
       studentIndex,
       evaluationCriteria,
       tone,
-      openaiApiKey,
+      apiKey,
       wordCount,
-      creativity
+      creativity,
+      isPersonalKey
     );
 
     return {

@@ -170,8 +170,6 @@ const WordCountSlider = ({ wordCount, onWordCountChange }) => (
   </div>
 );
 
-
-
 function StudentEvaluationTool() {
   const [pdfFile, setPdfFile] = useState(null);
   const [evaluationCriteria, setEvaluationCriteria] = useState(null);
@@ -194,6 +192,8 @@ function StudentEvaluationTool() {
   const [isTeacher, setIsTeacher] = useState(false);
   const [studentSession, setStudentSession] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentModel, setCurrentModel] = useState('GPT-4.1-mini');
+  const [hasPersonalKey, setHasPersonalKey] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -203,11 +203,18 @@ function StudentEvaluationTool() {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           setIsTeacher(userData.role === 'teacher');
+          
+          // 개인 키 보유 여부 확인 및 모델 설정
+          const hasKey = !!(userData.openaiKey && userData.openaiKey.trim());
+          setHasPersonalKey(hasKey);
+          setCurrentModel(hasKey ? 'GPT-4.1' : 'GPT-4.1-mini');
         }
         setIsAuthenticated(true);
       } else {
         setUser(null);
         setIsTeacher(false);
+        setHasPersonalKey(false);
+        setCurrentModel('GPT-4.1-mini');
         
         // 학생 세션 확인
         const sessionData = Cookies.get('studentSession');
@@ -215,6 +222,21 @@ function StudentEvaluationTool() {
           const parsedSessionData = JSON.parse(sessionData);
           setStudentSession(parsedSessionData);
           setIsAuthenticated(true);
+          
+          // 학생 세션의 경우 교사의 키 정보 확인 필요
+          if (parsedSessionData.teacherId) {
+            try {
+              const teacherDoc = await getDoc(doc(db, 'users', parsedSessionData.teacherId));
+              if (teacherDoc.exists()) {
+                const teacherData = teacherDoc.data();
+                const hasTeacherKey = !!(teacherData.openaiKey && teacherData.openaiKey.trim());
+                setHasPersonalKey(hasTeacherKey);
+                setCurrentModel(hasTeacherKey ? 'GPT-4.1' : 'GPT-4.1-mini');
+              }
+            } catch (error) {
+              console.error('교사 정보 확인 중 오류:', error);
+            }
+          }
         } else {
           setIsAuthenticated(false);
         }
@@ -394,7 +416,10 @@ function StudentEvaluationTool() {
                 <FaInfoCircle size={20} />
               </button>
             </div>
-            <div className="text-sm font-normal text-center mb-10 text-gray-400">PDF 기반 성적 분석</div>
+            <div className="text-sm font-normal text-center mb-2 text-gray-400">PDF 기반 성적 분석</div>
+            <div className="text-sm font-normal text-center mb-10 text-gray-400">
+              현재 사용 모델: {currentModel} {hasPersonalKey ? '(개인 키)' : '(기본 키)'}
+            </div>
 
             {isAuthenticated ? (
               <>
