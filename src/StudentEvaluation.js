@@ -208,6 +208,7 @@ function StudentEvaluationTool() {
           const hasKey = !!(userData.openaiKey && userData.openaiKey.trim());
           setHasPersonalKey(hasKey);
           setCurrentModel(hasKey ? 'GPT-4.1' : 'GPT-4.1-mini');
+          console.log('🔑 사용자 키 상태:', { hasKey, model: hasKey ? 'GPT-4.1' : 'GPT-4.1-mini' });
         }
         setIsAuthenticated(true);
       } else {
@@ -215,6 +216,7 @@ function StudentEvaluationTool() {
         setIsTeacher(false);
         setHasPersonalKey(false);
         setCurrentModel('GPT-4.1-mini');
+        console.log('🔑 기본 상태 설정:', { model: 'GPT-4.1-mini', hasKey: false });
         
         // 학생 세션 확인
         const sessionData = Cookies.get('studentSession');
@@ -232,6 +234,7 @@ function StudentEvaluationTool() {
                 const hasTeacherKey = !!(teacherData.openaiKey && teacherData.openaiKey.trim());
                 setHasPersonalKey(hasTeacherKey);
                 setCurrentModel(hasTeacherKey ? 'GPT-4.1' : 'GPT-4.1-mini');
+                console.log('🔑 교사 키 상태 (학생 세션):', { hasTeacherKey, model: hasTeacherKey ? 'GPT-4.1' : 'GPT-4.1-mini' });
               }
             } catch (error) {
               console.error('교사 정보 확인 중 오류:', error);
@@ -418,8 +421,14 @@ function StudentEvaluationTool() {
             </div>
             <div className="text-sm font-normal text-center mb-2 text-gray-400">PDF 기반 성적 분석</div>
             <div className="text-sm font-normal text-center mb-10 text-gray-400">
-              현재 사용 모델: {currentModel} {hasPersonalKey ? '(개인 키)' : '(기본 키)'}
+              현재 사용 모델: {currentModel || 'GPT-4.1-mini'} {hasPersonalKey ? '(개인 키)' : '(기본 키)'}
             </div>
+            {/* 디버깅용 정보 */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs text-center mb-4 text-red-400">
+                DEBUG: isAuth={isAuthenticated.toString()}, model={currentModel}, hasKey={hasPersonalKey.toString()}
+              </div>
+            )}
 
             {isAuthenticated ? (
               <>
