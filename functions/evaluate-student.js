@@ -87,7 +87,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
     }
 
     // 개인 키 사용 시 gpt-4.1, 기본 키 사용 시 gpt-4.1-mini
-    const modelToUse = isPersonalKey ? "gpt-4.1" : "gpt-4o-mini";
+    const modelToUse = isPersonalKey ? "gpt-4.1" : "gpt-4.1-mini";
     console.log(`🤖 사용 모델: ${modelToUse} (개인키: ${isPersonalKey})`);
 
     const response = await axios.post(
@@ -105,7 +105,7 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             #기본지침
             1. 전처리 : ${text}에서 "1:01:12임000000000000000000124717" 형태의 문자열은 TEXT 데이터에서 제거해줘.
             2.  Text: ${text}에서 학생 목록을 파악한뒤, ${studentIndex}번째 순서의 학생의 이름과 {평가점수}를 추출한 다음, 평가 기준: ${JSON.stringify(evaluationCriteria)}을 이해하고, 이에 따라 학생을 평가하는 자연스러운 문장을 생성해줘. 
-              2-1. {평가점수}의 등급은 잘함,보통,노력요함이며, 각 상,중,하 등급은 다음과 같이 표기되는 것이 일반적이야. 순서대로 가장 앞에 나열된 것이 가장 우수한 성적, 뒤로 갈수록 낮은 성적이야.
+              2-1. {평가점수}의 등급은 잘함,보통,노력요함이며, 각 상,중,하 등급, 혹은 최상, 상, 중, 하 등급은 다음과 같이 표기되는 것이 일반적이야. 순서대로 가장 앞에 나열된 것이 가장 우수한 성적, 뒤로 갈수록 낮은 성적이야.
               2-2. {잘함,보통,노력요함}, { ○ , □ , △ }, { ◎ , ○ , △ }, {상,중,하}, { ◎ , ○ , △ , □ }  
 
             3. 학생이름은 {김,이,최,백,우,유,윤,박,노,강} 등의 단어로 시작하는 3글자 가량의 독립된 문자열이며, 텍스트에서 다음과 같이 번호(숫자)+빈칸+이름(문자열) 형태로 배열되어 있어. 
@@ -134,7 +134,14 @@ async function extractAndEvaluateStudent(text, studentIndex, evaluationCriteria,
             ***다양한 상황과 대상에 따른 언어적 비언어적 표현의 효과에 대해 알고 실제 생활에 적용함. 글을 읽으면서 낱말의 뜻을 짐작해 보고 짐작한 뜻을 사전에서 찾아 확인함.
 
             #최종 결과물 산출: 최종적으로 평가결과 문장에서 이름 및 주어를 제외한, 순수한 평가결과를 JSON 형식으로 반환해줘. 
+            
+            **중요**: "평가점수" 필드에는 반드시 간단한 등급만 입력해줘. 예시: "우수", "보통", "노력요함", "상", "중", "하" 등
+            상세한 평가 내용은 "평가결과" 필드에만 작성해줘.
+            
             형식: { "학생데이터": { "번호": "1", "이름": "홍길동" , "평가점수": { ${evaluationAreas} } }, "평가결과": "..." }. 
+            
+            평가점수 예시:
+            { "쓰기": "보통", "문법": "노력요함", "듣기·말하기": "우수" }
             `
           }
         ],
