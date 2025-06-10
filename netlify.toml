@@ -10,7 +10,8 @@
 
 
 [build]
-  command = "npm install"
+  command = "npm run build"
+  publish = "build"
   functions = "functions"
 
 

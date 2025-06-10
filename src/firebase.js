@@ -22,10 +22,18 @@ const requiredEnvVars = [
   'REACT_APP_FIREBASE_APP_ID'
 ];
 
+// 디버깅: 환경 변수 상태 확인
+console.log('🔍 환경 변수 확인:');
+requiredEnvVars.forEach(varName => {
+  const value = process.env[varName];
+  console.log(`${varName}: ${value ? '✅ 설정됨' : '❌ 누락'}`);
+});
+
 const missingEnvVars = requiredEnvVars.filter(varName => !process.env[varName]);
 
 if (missingEnvVars.length > 0) {
   console.error('Missing environment variables:', missingEnvVars.join(', '));
+  console.error('🚨 Netlify 환경 변수 설정을 확인해주세요!');
   throw new Error('Missing required environment variables');
 }
 
