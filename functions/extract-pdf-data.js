@@ -15,20 +15,40 @@ if (!admin.apps.length) {
     // Private key 처리 개선
     let privateKey = process.env.FIREBASE_PRIVATE_KEY;
     
-    if (privateKey) {
+    console.log('🔍 Private Key 디버깅:');
+    console.log('- 존재 여부:', !!privateKey);
+    console.log('- 길이:', privateKey?.length);
+    console.log('- 시작 부분:', privateKey?.substring(0, 50));
+    console.log('- 끝 부분:', privateKey?.substring(privateKey.length - 50));
+    
+    // 방법 1: 서비스 계정 키 파일 사용 (로컬 개발용)
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+      console.log('🔑 서비스 계정 키 파일 사용');
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+    }
+    // 방법 2: 환경 변수 사용
+    else if (privateKey) {
       // 로컬 환경에서 따옴표로 감싸진 경우 제거
       privateKey = privateKey.replace(/^"(.*)"$/, '$1');
       // 이스케이프된 개행 문자를 실제 개행 문자로 변환
       privateKey = privateKey.replace(/\\n/g, '\n');
-    }
+      
+      console.log('🔧 처리 후 Private Key:');
+      console.log('- 길이:', privateKey.length);
+      console.log('- 시작 부분:', privateKey.substring(0, 50));
 
-    admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey,
-      }),
-    });
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: privateKey,
+        }),
+      });
+    } else {
+      throw new Error('Firebase 인증 정보가 없습니다.');
+    }
     
     db = admin.firestore();
     firebaseInitialized = true;

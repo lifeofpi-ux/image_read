@@ -259,7 +259,8 @@ function AppContent() {
       <div className="bg-white p-6 rounded-lg shadow-xl min-w-[300px]" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-bold mb-8">😎 만든 사람</h2>
         <p className="mb-2 font-bold mt-2 py-1 text-center ">라이프오브파이</p>
-        <p className="mb-4 text-center py-2">커피와 위스키, 무료함을 좋아합니다.</p>
+        <p className="mb-2 text-center py-2">커피와 위스키, 무료함을 좋아합니다.</p>
+        <p className="mb-4 text-center py-2 text-sm text-gray-600">AI를 활용한 코딩 연수 요청 : indend007@gmail.com</p>
         <button 
           onClick={() => setIsModalOpen(false)}
           className="mt-4 min-w-[100%] bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-300"
