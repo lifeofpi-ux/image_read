@@ -2,12 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 
-const HomePage = ({ 
-  user, 
+const HomePage = ({
+  user,
   studentSession,
-  setIsLoginModalOpen, 
-  setIsModalOpen, 
+  setIsLoginModalOpen,
+  setIsModalOpen,
   setIsStudentLoginModalOpen,
   setShowLoginSuccess,
   setLoginSuccessInfo,
@@ -17,6 +18,7 @@ const HomePage = ({
   const [isLoginConfirmModalOpen, setIsLoginConfirmModalOpen] = useState(false);
   const [selectedPath, setSelectedPath] = useState('');
   const [adminKeyAllowed, setAdminKeyAllowed] = useState(null);
+  const [isPrivacyPolicyModalOpen, setIsPrivacyPolicyModalOpen] = useState(false);
 
   useEffect(() => {
     if ((user || studentSession) && typeof setShowLoginSuccess === 'function') {
@@ -57,20 +59,20 @@ const HomePage = ({
         <h2 className="text-xl font-bold mb-3 text-center text-gray-800">로그인 필요</h2>
         <p className="mb-5 text-center text-sm text-gray-600">로그인 후 이용하실 수 있습니다.</p>
         <div className="flex flex-col space-y-2">
-          <button 
+          <button
             onClick={() => handleLoginSelection(true)}
             className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
           >
             👩🏻‍🏫 선생님 로그인
           </button>
-          <button 
+          <button
             onClick={() => handleLoginSelection(false)}
             className="w-full py-3 bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg shadow-md hover:from-pink-600 hover:to-pink-700 transition duration-300 ease-in-out transform hover:-translate-y-1 hover:scale-105"
           >
             👩🏻‍💻 학생 로그인
           </button>
         </div>
-        <button 
+        <button
           onClick={() => setIsLoginConfirmModalOpen(false)}
           className="mt-5 w-full py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition duration-300 ease-in-out"
         >
@@ -110,7 +112,7 @@ const HomePage = ({
       <h1 className="text-4xl font-bold mb-1 text-gray-800">T.R.I.P.O.D.</h1>
       <h1 className="text-sm font-bold mb-20 text-gray-400">수업, 평가, 교육 그리고 사람들</h1>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl w-300 px-4 mb-20">
-        <div 
+        <div
           onClick={() => handleCardClick("/rubric-report")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
@@ -122,7 +124,7 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI를 활용한 루브릭 기반 평가 리포트 생성</p>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleCardClick("/image-analysis")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
@@ -134,7 +136,7 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI를 이용한 이미지 기반 학습 결과물 분석</p>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleCardClick("/conv-ai")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
@@ -146,7 +148,7 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI와의 대화를 통한 학습 지원 및 질문 해결</p>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleCardClick("/idea-canvas")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
@@ -158,7 +160,7 @@ const HomePage = ({
             <p className="text-sm text-gray-600">AI Prompt를 활용한 포스트 아이디어 평가</p>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleCardClick("/tpack-lesson")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
@@ -170,7 +172,7 @@ const HomePage = ({
             <p className="text-sm text-gray-600">TPACK 모델을 활용한 교수학습 설계 도구</p>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleCardClick("/student-evaluation")}
           className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition duration-300 hover:scale-105"
         >
@@ -184,38 +186,46 @@ const HomePage = ({
         </div>
       </div>
       <div className="max-w-xl w-full mt-8 mb-20 text-center">
-        <div className={`text-sm font-medium ${
-          adminKeyAllowed ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
-        } p-2 rounded-lg border ${
-          adminKeyAllowed ? 'border-green-200' : 'border-red-200'
-        } shadow-sm`}>
+        <div className={`text-sm font-medium ${adminKeyAllowed ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
+          } p-2 rounded-lg border ${adminKeyAllowed ? 'border-green-200' : 'border-red-200'
+          } shadow-sm`}>
           *AI 도구 모드 👉 {
-            adminKeyAllowed 
-              ? '시스템 AI API Key를 활용할 수 있습니다.' 
+            adminKeyAllowed
+              ? '시스템 AI API Key를 활용할 수 있습니다.'
               : '시스템 AI API Key를 활용할 수 없습니다. 개인 키를 추가해주세요.'
           }
         </div>
       </div>
       <div className="absolute bottom-5 text-center text-sm text-gray-400 w-full">
         <div className="flex justify-center items-center space-x-6">
-          <a 
-            href="https://slashpage.com/tripod/about" 
-            target="_blank" 
+          <a
+            href="https://slashpage.com/tripod/about"
+            target="_blank"
             rel="noopener noreferrer"
             className="hover:text-gray-600 transition duration-300 text-bold"
           >
             2024. T.R.I.P.O.D. 수업 혁신 연구회
           </a>
-          <button 
+          <button
             onClick={() => setIsModalOpen(true)}
             className="hover:text-gray-600 transition duration-300"
           >
             만든 사람
           </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={() => setIsPrivacyPolicyModalOpen(true)}
+            className="hover:text-gray-600 transition duration-300"
+          >
+            개인정보 처리방침
+          </button>
         </div>
       </div>
       {isLoginConfirmModalOpen && <LoginConfirmModal />}
-      <MiniPopup isVisible={true} onClose={() => {}} />
+      {isPrivacyPolicyModalOpen && (
+        <PrivacyPolicyModal onClose={() => setIsPrivacyPolicyModalOpen(false)} />
+      )}
+      <MiniPopup isVisible={true} onClose={() => { }} />
     </div>
   );
 };
