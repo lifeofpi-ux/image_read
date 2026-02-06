@@ -199,12 +199,173 @@ const PrivacyPolicyModal = ({ onClose }) => {
                             </p>
                         </section>
 
-                        <section className="bg-green-50 p-4 rounded-lg">
+                        <section className="bg-green-50 p-4 rounded-lg mb-10">
                             <h3 className="text-sm font-bold text-green-800 mb-2">「초·중등교육법」 제29조의2 기준 충족 안내</h3>
                             <p className="text-xs text-green-700">
                                 본 개인정보처리방침은 「초·중등교육법」 제29조의2에 따른, 학습지원 소프트웨어 선정 기준 및 가이드라인을 준수합니다.
                             </p>
                         </section>
+
+                        {/* 체크리스트 양식 추가 */}
+                        <div className="mt-12 p-8 bg-white border border-gray-300 rounded-sm shadow-sm font-sans text-gray-900">
+                            <h2 className="text-2xl font-bold text-center mb-8 underline underline-offset-8 decoration-1">
+                                학습지원 소프트웨어 필수기준 체크리스트[공급자용]
+                            </h2>
+
+                            <div className="mb-6">
+                                <h3 className="text-lg font-bold flex items-center mb-3">
+                                    <span className="inline-block w-4 h-4 border border-black mr-2"></span> 제품/서비스 개요
+                                </h3>
+                                <table className="w-full border-collapse border border-black text-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 px-3 py-2 font-bold w-1/4 text-center">제품/서비스명</td>
+                                            <td className="border border-black px-3 py-2 w-1/4 text-center">T.R.I.P.O.D. AI Tools</td>
+                                            <td className="border border-black bg-gray-200 px-3 py-2 font-bold w-1/4 text-center">공급자</td>
+                                            <td className="border border-black px-3 py-2 w-1/4 text-center">이상선</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 px-3 py-2 font-bold text-center">접속경로</td>
+                                            <td colSpan="3" className="border border-black px-3 py-2 italic text-gray-700">
+                                                * PC웹/앱 : <a href="https://tripodtools.netlify.app" className="underline text-blue-600">https://tripodtools.netlify.app</a>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 px-3 py-2 font-bold text-center">주요 내용 및<br />기능·특장점</td>
+                                            <td colSpan="3" className="border border-black px-3 py-2">
+                                                다양한 AI 기반 수업 도구들을 제공함(교사가 관리 가능한 AI 챗봇 등)
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div className="mb-6">
+                                <h3 className="text-lg font-bold flex items-center mb-3">
+                                    <span className="inline-block w-4 h-4 border border-black mr-2"></span> 개인정보보호 기준 충족여부
+                                </h3>
+                                <table className="w-full border-collapse border border-black text-xs text-center">
+                                    <thead className="bg-gray-200 font-bold">
+                                        <tr>
+                                            <th rowSpan="2" className="border border-black px-1 py-4 w-[15%]">선정기준</th>
+                                            <th rowSpan="2" className="border border-black px-1 py-4 w-[40%]">세부 내용</th>
+                                            <th colSpan="3" className="border border-black px-1 py-1">확인</th>
+                                            <th rowSpan="2" className="border border-black px-1 py-4 w-[20%]">증빙</th>
+                                        </tr>
+                                        <tr>
+                                            <th className="border border-black px-1 py-1 w-[8%] text-[10px]">충족</th>
+                                            <th className="border border-black px-1 py-1 w-[8%] text-[10px]">미충족</th>
+                                            <th className="border border-black px-1 py-1 w-[9%] text-[10px]">해당<br />없음</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {/* 1. 최소처리 원칙 준수 */}
+                                        <tr>
+                                            <td rowSpan="3" className="border border-black px-2 py-2 font-bold text-center bg-gray-50">1. 최소처리<br />원칙 준수</td>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">1-1. 개인정보가 최소한으로 수집되는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제3조</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">1-2. 개인정보 수집·이용 목적이 기재되어<br />있는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제3조</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">1-3. 개인정보 수집항목, 보유기간 등이<br />기재되어 있는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제3,4조</td>
+                                        </tr>
+
+                                        {/* 2. 개인정보 안전조치 의무 */}
+                                        <tr>
+                                            <td className="border border-black px-2 py-2 font-bold text-center bg-gray-50">2. 개인정보<br />안전조치 의무</td>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">2-1. 개인정보 안전성 확보에 필요한 조치<br />사항이 기재되어 있는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제8조</td>
+                                        </tr>
+
+                                        {/* 3. 열람/정정/삭제/처리정지 절차 */}
+                                        <tr>
+                                            <td className="border border-black px-2 py-2 font-bold text-center bg-gray-50">3. 열람/정정/<br />삭제/처리정지<br />절차</td>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">3-1. 이용자에게 언제든지 자신의 정보를<br />열람·정정·삭제·처리정지를 요구할 수<br />있는 절차가 안내되어 있는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제5조</td>
+                                        </tr>
+
+                                        {/* 4. 만14세 미만 아동의 개인정보 보호 */}
+                                        <tr>
+                                            <td className="border border-black px-2 py-2 font-bold text-center bg-gray-50">4. 만14세<br />미만 아동의<br />개인정보 보호</td>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">4-1. 만 14세 미만 아동의 경우 법정대리인<br />동의 등 아동의 개인정보 보호를 위한<br />절차가 마련되어 있는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제6조</td>
+                                        </tr>
+
+                                        {/* 5. 보호책임자/제3자제공/위탁 등 */}
+                                        <tr>
+                                            <td rowSpan="3" className="border border-black px-2 py-2 font-bold text-center bg-gray-50">5.<br />보호책임자/<br />제3자제공/<br />위탁 등</td>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">5-1. 개인정보 보호책임자 관련 정보가<br />안내되어 있는가?</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제9조</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">5-2. 개인정보 제3자 제공에 관한 정보가<br />기재되어 있는가? (필요시)</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제5조</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black px-3 py-2 text-left bg-gray-50">5-3. 개인정보 위·수탁관계에 관한 정보가<br />기재되어 있는가? (필요시)</td>
+                                            <td className="border border-black px-1 py-2 font-bold text-lg">▣</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-1 py-2 text-lg text-gray-300">□</td>
+                                            <td className="border border-black px-2 py-2 bg-gray-50">개인정보<br />처리방침 제5조</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <p className="text-[11px] mt-2 text-gray-600">
+                                    ※ 개인정보처리방침 확인 방법 : <a href="https://tripodtools.netlify.app/" className="underline">https://tripodtools.netlify.app/</a> 하단 개인정보 처리 방침
+                                </p>
+                            </div>
+
+                            <div>
+                                <h3 className="text-lg font-bold flex items-center mb-3">
+                                    <span className="inline-block w-4 h-4 border border-black mr-2"></span> 작성일 및 문의처
+                                </h3>
+                                <table className="w-full border-collapse border border-black text-sm">
+                                    <tbody>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 px-3 py-2 font-bold w-1/4 text-center">작성일</td>
+                                            <td className="border border-black px-3 py-2 text-center font-semibold">2026.02.04</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="border border-black bg-gray-200 px-3 py-2 font-bold text-center">문의처</td>
+                                            <td className="border border-black px-3 py-2">
+                                                <div className="flex justify-around">
+                                                    <span><strong>(전화)</strong> 010-3893-2858</span>
+                                                    <span><strong>(이메일)</strong> indend007@gmail.com</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
